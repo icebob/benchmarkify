@@ -1,5 +1,8 @@
 const _ = require("lodash");
-const Promise	= require("bluebird");
+const path = require("path");
+const fs = require("fs");
+const mkdir = require("mkdirp");
+const Promise = require("bluebird");
 const chalk = require("chalk");
 const Benchmark = require("benchmark");
 
@@ -23,7 +26,8 @@ class Benchmarkify {
 	constructor(opts) {
 		this.opts = _.defaultsDeep(opts, {
 			async: false,
-			name: ""
+			name: "",
+			resultFile: null
 		});
 		this.suite = new Benchmark.Suite;
 		this.logger = this.opts.logger || console;
@@ -97,6 +101,28 @@ class Benchmarkify {
 
 				if (self.opts.spinner !== false)
 					spinner.stop();
+
+				if (self.opts.resultFile) {
+					mkdir.sync(path.dirname(path.resolve(self.opts.resultFile)));
+					let content = {};
+					if (fs.existsSync(self.opts.resultFile)) {
+						try {
+							content = JSON.parse(fs.readFileSync(self.opts.resultFile));
+						} catch(e) {
+							// Ignored
+						}
+					}
+
+					content[self.opts.name] = tests.map(bench => ({
+						name: bench.name,
+						count: bench.hz
+					}));
+
+					content.timestamp = Date.now();
+					content.generated = new Date().toString();
+					
+					fs.writeFileSync(self.opts.resultFile, JSON.stringify(content, null, 2));
+				}
 
 				resolve();
 			});

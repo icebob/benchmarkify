@@ -1,0 +1,16 @@
+{
+  "String concatenate": [
+    {
+      "name": "Concat with '+'",
+      "timestamp": 1491379942740,
+      "generated": "Wed Apr 05 2017 10:12:22 GMT+0200 (Közép-európai nyári idő )",
+      "count": 30293.77052647164
+    },
+    {
+      "name": "Concat with array & join",
+      "timestamp": 1491379942759,
+      "generated": "Wed Apr 05 2017 10:12:22 GMT+0200 (Közép-európai nyári idő )",
+      "count": 17438.451480537886
+    }
+  ]
+}
