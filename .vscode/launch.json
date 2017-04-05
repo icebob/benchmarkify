@@ -7,10 +7,19 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Launch Example multi",
+			"name": "Example multi",
 			"program": "${workspaceRoot}\\examples\\index.js",
 			"args": [
 				"multi"
+			]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Example async",
+			"program": "${workspaceRoot}\\examples\\index.js",
+			"args": [
+				"async"
 			]
 		},
 		{

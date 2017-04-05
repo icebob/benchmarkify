@@ -1,7 +1,4 @@
 const _ = require("lodash");
-const path = require("path");
-const fs = require("fs");
-const mkdir = require("mkdirp");
 const Promise = require("bluebird");
 const chalk = require("chalk");
 const Benchmark = require("benchmark");
@@ -26,8 +23,7 @@ class Benchmarkify {
 	constructor(opts) {
 		this.opts = _.defaultsDeep(opts, {
 			async: false,
-			name: "",
-			resultFile: null
+			name: ""
 		});
 		this.suite = new Benchmark.Suite;
 		this.logger = this.opts.logger || console;
@@ -103,10 +99,10 @@ class Benchmarkify {
 					spinner.stop();
 
 				let results = {
-					tests: {}
+					name: self.opts.name
 				};
 
-				results.tests[self.opts.name] = tests.map(bench => ({
+				results.tests = tests.map(bench => ({
 					name: bench.name,
 					count: bench.hz
 				}));
@@ -114,12 +110,7 @@ class Benchmarkify {
 				results.timestamp = Date.now();
 				results.generated = new Date().toString();
 
-				if (self.opts.resultFile) {
-					mkdir.sync(path.dirname(path.resolve(self.opts.resultFile)));
-					fs.writeFileSync(self.opts.resultFile, JSON.stringify(results, null, 2), 'utf8');
-				}
-
-				resolve(results);
+				return resolve(results);
 			});
 
 			this.logger.log(chalk.magenta.bold("Suite:", this.opts.name));
@@ -148,12 +139,21 @@ class Benchmarkify {
 	}
 
 	static run(suites) {
-		let obj = {};
-		suites.forEach(suite => {
-			obj[suite.opts.name] = suite.run()
-		});
+		let list = Array.from(suites);
+		let results = [];
 
-		return Promise.props(obj);
+		function run(suite) {
+			return suite.run().then(res => {
+				results.push(res);
+
+				if (list.length > 0)
+					return run(list.shift());
+
+				return results;
+			});
+		}
+
+		return run(list.shift()).then(() => results);
 	}
 }
 

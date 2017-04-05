@@ -1,20 +1,15 @@
 {
-  "tests": {
-    "Increment integer": [
-      {
-        "name": "Increment with ++",
-        "count": 70397010.11552367
-      },
-      {
-        "name": "Increment with +=",
-        "count": 63978398.53357127
-      },
-      {
-        "name": "Increment with = i + 1",
-        "count": 69046296.75073728
-      }
-    ]
-  },
-  "timestamp": 1491403929940,
-  "generated": "Wed Apr 05 2017 16:52:09 GMT+0200 (Közép-európai nyári idő )"
+  "name": "Date performance",
+  "tests": [
+    {
+      "name": "Call Date.now",
+      "count": 1373.2549515708938
+    },
+    {
+      "name": "Call process.hrtime",
+      "count": 3078.049887663727
+    }
+  ],
+  "timestamp": 1491420055572,
+  "generated": "Wed Apr 05 2017 21:20:55 GMT+0200 (Central Europe Daylight Time)"
 }
