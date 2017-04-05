@@ -1,0 +1,20 @@
+{
+  "tests": {
+    "Increment integer": [
+      {
+        "name": "Increment with ++",
+        "count": 70397010.11552367
+      },
+      {
+        "name": "Increment with +=",
+        "count": 63978398.53357127
+      },
+      {
+        "name": "Increment with = i + 1",
+        "count": 69046296.75073728
+      }
+    ]
+  },
+  "timestamp": 1491403929940,
+  "generated": "Wed Apr 05 2017 16:52:09 GMT+0200 (Közép-európai nyári idő )"
+}
