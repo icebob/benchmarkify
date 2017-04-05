@@ -1,28 +1,30 @@
 {
-  "Date performance": [
-    {
-      "name": "Call Date.now",
-      "count": 1099.265844937106
-    },
-    {
-      "name": "Call process.hrtime",
-      "count": 2128.5539100242263
-    }
-  ],
-  "Increment integer": [
-    {
-      "name": "Increment with ++",
-      "count": 71193180.92691727
-    },
-    {
-      "name": "Increment with +=",
-      "count": 63623036.63459145
-    },
-    {
-      "name": "Increment with = i + 1",
-      "count": 72415170.0881232
-    }
-  ],
-  "timestamp": 1491380204855,
-  "generated": "Wed Apr 05 2017 10:16:44 GMT+0200 (Közép-európai nyári idő )"
+  "suites": {
+    "Date performance": [
+      {
+        "name": "Call Date.now",
+        "count": 1117.072219061476
+      },
+      {
+        "name": "Call process.hrtime",
+        "count": 2105.384657722671
+      }
+    ],
+    "Increment integer": [
+      {
+        "name": "Increment with ++",
+        "count": 71312828.43424784
+      },
+      {
+        "name": "Increment with +=",
+        "count": 64542354.18162208
+      },
+      {
+        "name": "Increment with = i + 1",
+        "count": 71180902.65344249
+      }
+    ]
+  },
+  "timestamp": 1491395464173,
+  "generated": "Wed Apr 05 2017 14:31:04 GMT+0200 (Közép-európai nyári idő )"
 }

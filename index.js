@@ -104,16 +104,18 @@ class Benchmarkify {
 
 				if (self.opts.resultFile) {
 					mkdir.sync(path.dirname(path.resolve(self.opts.resultFile)));
-					let content = {};
+					let content = {
+						suites: {}
+					};
 					if (fs.existsSync(self.opts.resultFile)) {
 						try {
-							content = JSON.parse(fs.readFileSync(self.opts.resultFile));
+							content = JSON.parse(fs.readFileSync(self.opts.resultFile), 'utf8');
 						} catch(e) {
 							// Ignored
 						}
 					}
 
-					content[self.opts.name] = tests.map(bench => ({
+					content.suites[self.opts.name] = tests.map(bench => ({
 						name: bench.name,
 						count: bench.hz
 					}));
@@ -121,7 +123,7 @@ class Benchmarkify {
 					content.timestamp = Date.now();
 					content.generated = new Date().toString();
 					
-					fs.writeFileSync(self.opts.resultFile, JSON.stringify(content, null, 2));
+					fs.writeFileSync(self.opts.resultFile, JSON.stringify(content, null, 2), 'utf8');
 				}
 
 				resolve();
