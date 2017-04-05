@@ -102,31 +102,24 @@ class Benchmarkify {
 				if (self.opts.spinner !== false)
 					spinner.stop();
 
+				let results = {
+					tests: {}
+				};
+
+				results.tests[self.opts.name] = tests.map(bench => ({
+					name: bench.name,
+					count: bench.hz
+				}));
+
+				results.timestamp = Date.now();
+				results.generated = new Date().toString();
+
 				if (self.opts.resultFile) {
 					mkdir.sync(path.dirname(path.resolve(self.opts.resultFile)));
-					let content = {
-						suites: {}
-					};
-					if (fs.existsSync(self.opts.resultFile)) {
-						try {
-							content = JSON.parse(fs.readFileSync(self.opts.resultFile), 'utf8');
-						} catch(e) {
-							// Ignored
-						}
-					}
-
-					content.suites[self.opts.name] = tests.map(bench => ({
-						name: bench.name,
-						count: bench.hz
-					}));
-
-					content.timestamp = Date.now();
-					content.generated = new Date().toString();
-					
-					fs.writeFileSync(self.opts.resultFile, JSON.stringify(content, null, 2), 'utf8');
+					fs.writeFileSync(self.opts.resultFile, JSON.stringify(results, null, 2), 'utf8');
 				}
 
-				resolve();
+				resolve(results);
 			});
 
 			this.logger.log(chalk.magenta.bold("Suite:", this.opts.name));
@@ -153,6 +146,17 @@ class Benchmarkify {
 			logger.log("");	
 		}
 	}
+
+	static run(suites) {
+		let obj = {};
+		suites.forEach(suite => {
+			obj[suite.opts.name] = suite.run()
+		});
+
+		return Promise.props(obj);
+	}
 }
+
+Benchmarkify.Promise = Promise;
 
 module.exports = Benchmarkify;

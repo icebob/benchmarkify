@@ -20,4 +20,6 @@ bench.add("Concat with array & join", () => {
 	return s.join();
 });
 
-bench.run();
+bench.run().then(res => {
+	console.log(res);
+});

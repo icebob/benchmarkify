@@ -43,5 +43,7 @@ bench2.add("Increment with = i + 1", () => {
 	i3 = i3 + 1;
 });
 
-bench1.run()
-.then(() => bench2.run());
+Benchmarkify.run([bench1, bench2])
+.then(res => {
+	console.log(res);
+});

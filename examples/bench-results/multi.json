@@ -3,18 +3,18 @@
     "Increment integer": [
       {
         "name": "Increment with ++",
-        "count": 70397010.11552367
+        "count": 71586198.7179288
       },
       {
         "name": "Increment with +=",
-        "count": 63978398.53357127
+        "count": 64777336.3445124
       },
       {
         "name": "Increment with = i + 1",
-        "count": 69046296.75073728
+        "count": 71711715.07186764
       }
     ]
   },
-  "timestamp": 1491403929940,
-  "generated": "Wed Apr 05 2017 16:52:09 GMT+0200 (Közép-európai nyári idő )"
+  "timestamp": 1491403681677,
+  "generated": "Wed Apr 05 2017 16:48:01 GMT+0200 (Közép-európai nyári idő )"
 }
