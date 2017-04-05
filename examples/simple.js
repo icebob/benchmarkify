@@ -3,7 +3,7 @@
 let Benchmarkify = require("../");
 Benchmarkify.printHeader("Simple example");
 
-let bench = new Benchmarkify({ async: false, name: "String concatenate", resultFile: "./bench-results/simple.json"});
+let bench = new Benchmarkify({ async: false, name: "String concatenate"});
 
 const ITERATION = 1000;
 bench.add("Concat with '+'", () => {

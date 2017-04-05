@@ -3,7 +3,7 @@
 let Benchmarkify = require("../");
 Benchmarkify.printHeader("Multi example");
 
-let bench1 = new Benchmarkify({ async: false, name: "Date performance", resultFile: "./bench-results/multi.json"});
+let bench1 = new Benchmarkify({ async: false, name: "Date performance"});
 
 const cycle = 10 * 1000;
 
@@ -25,7 +25,7 @@ bench1.add("Call process.hrtime", () => {
 	return time;
 });
 
-let bench2 = new Benchmarkify({ async: false, name: "Increment integer", resultFile: "./bench-results/multi.json"});
+let bench2 = new Benchmarkify({ async: false, name: "Increment integer"});
 
 const ITERATION = 1000;
 let i1 = 0;
