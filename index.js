@@ -1,6 +1,7 @@
 const _ = require("lodash");
 const Promise = require("bluebird");
 const chalk = require("chalk");
+const humanize = require('tiny-human-time');
 
 const ora = require('ora');
 const spinner = ora({ 
@@ -17,6 +18,10 @@ const spinner = ora({
 		]
 	} 
 });
+
+function formatNumber(value, decimals = 0) {
+	return Number(value.toFixed(decimals)).toLocaleString();
+}
 
 class TestCase {
 	constructor(suite, name, fn, async, opts) {
@@ -133,7 +138,7 @@ class Suite {
 		}*/
 	}
 
-	skip() {
+	skip(name, fn, opts = {}) {
 		const async = opts.async != null ? opts.async : this.parent.async;
 
 		const test = new TestCase(this, name, fn, async, opts);
@@ -154,13 +159,25 @@ class Suite {
 
 			function run(test) {
 
+				if (test.skip) {
+					if (self.parent.spinner !== false)
+						spinner.warn(chalk.yellow("[SKIP] " + test.name));	
+					else
+						self.logger.log(chalk.yellow("[SKIP]", test.name));
+
+					if (list.length > 0)
+						return run(list.shift());
+					else
+						return resolve();
+				}
+
 				if (self.parent.spinner !== false) {
 					spinner.text = `Running '${test.name}'...`;
 					spinner.start();
 				}
 				
 				return test.run().then(() => {
-					const ipsText = Number(test.stat.ips.toFixed(0)).toLocaleString();
+					const ipsText = formatNumber(test.stat.ips);
 					const resText = `${test.name} x ${ipsText} ips/sec`;
 
 					if (self.parent.spinner !== false)
@@ -171,8 +188,22 @@ class Suite {
 					if (list.length > 0)
 						return run(list.shift());
 
-					resolve();
-				});
+					return resolve();
+
+				}).catch(err => {
+
+					if (self.parent.spinner !== false)
+						spinner.fail(chalk.red("[ERR] " + test.name));	
+					else
+						self.logger.log(chalk.red("[ERR] " + test.name));
+					
+					self.logger.error(err);
+
+					if (list.length > 0)
+						return run(list.shift());
+
+					return resolve();					
+				})
 			}
 
 			run(list.shift());
@@ -237,19 +268,67 @@ class Suite {
 
 		}).then(() => {
 			// Generate results from test stat
-			const result = self.tests.map(test => {
-				return {
-					name: test.name,
-					skip: test.skip,
-					stat: test.stat
-				}
-			});
 
 			if (self.parent.spinner !== false)
 				spinner.stop();
 
-			return result;
+			self.logger.log("");
+
+			return self.calculateResult();
 		});
+	}
+
+	calculateResult() {
+		const result = this.tests.map(test => {
+			return {
+				name: test.name,
+				skipped: test.skip,
+				stat: test.skip ? null : test.stat
+			}
+		});
+
+		let maxIps = 0;
+		let maxTitleLength = 0;
+		let fastest = null;
+		this.tests.forEach(test => {
+			if (test.skip) return;
+
+			if (test.stat.ips > maxIps) {
+				maxIps = test.stat.ips;
+				fastest = test;
+			}
+
+			if (test.name.length > maxTitleLength)
+				maxTitleLength = test.name.length;
+		});
+
+		//this.tests.sort((a, b) => b.stat.ips - a.stat.ips);
+
+		if (fastest) {
+			let pe = _.padEnd;
+			let ps = _.padStart;
+
+			this.tests.forEach(test => {
+				if (test.skip) {
+					this.logger.log(chalk.yellow("  ", test.name, "(skipped)"));
+					return;
+				}
+				const c = test == fastest ? chalk.green : chalk.cyan;
+				let diff = ((test.stat.ips / fastest.stat.ips) * 100) - 100;
+				let line = [
+					"  ", 
+					pe(test.name, maxTitleLength + 1), 
+					ps(Number(diff).toFixed(2) + "%", 8), 
+					ps("  (" + formatNumber(test.stat.ips) + " ips/sec)", 20),
+					"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
+				];
+				this.logger.log(c.bold(...line));
+			});
+			this.logger.log("-----------------------------------------------------------------------\n");
+
+		}
+
+		return result;
 	}
 }
 
@@ -288,6 +367,7 @@ class Benchmarkify {
 	}
 
 	run(suites) {
+		const self = this;
 		let list = Array.from(suites || this.suites);
 		let results = [];
 
@@ -299,7 +379,7 @@ class Benchmarkify {
 					return run(list.shift());
 
 				return {
-					name: this.name,
+					name: self.name,
 					tests: results,
 					timestamp: Date.now(),
 					generated: new Date().toString()					

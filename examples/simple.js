@@ -8,7 +8,8 @@ const ITERATION = 1000;
 
 benchmark.createSuite({ 
 	name: "String concatenate", 
-	async: false
+	async: false,
+	time: 1000
 
 }).add("Concat with '+'", () => {
 	let s = "";
@@ -23,5 +24,5 @@ benchmark.createSuite({
 	return s.join();
 
 }).run().then(res => {
-	console.log(res);
+	console.log(JSON.stringify(res, null, 2));
 });
