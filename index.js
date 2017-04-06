@@ -19,11 +19,33 @@ const spinner = ora({
 	} 
 });
 
+/**
+ * 
+ * 
+ * @param {any} value 
+ * @param {number} [decimals=0] 
+ * @returns 
+ */
 function formatNumber(value, decimals = 0) {
 	return Number(value.toFixed(decimals)).toLocaleString();
 }
 
+/**
+ * 
+ * 
+ * @class TestCase
+ */
 class TestCase {
+	/**
+	 * Creates an instance of TestCase.
+	 * @param {any} suite 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} async 
+	 * @param {any} opts 
+	 * 
+	 * @memberOf TestCase
+	 */
 	constructor(suite, name, fn, async, opts) {
 		this.suite = suite;
 		this.name = name;
@@ -51,6 +73,13 @@ class TestCase {
 		}
 	}
 
+	/**
+	 * 
+	 * 
+	 * @returns 
+	 * 
+	 * @memberOf TestCase
+	 */
 	run() {
 		const self = this;
 		return new Promise(resolve => {
@@ -74,6 +103,12 @@ class TestCase {
 		});
 	}
 
+	/**
+	 * 
+	 * 
+	 * 
+	 * @memberOf TestCase
+	 */
 	start() {
 		this.running = true;
 		this.stat.count = 0;
@@ -81,6 +116,12 @@ class TestCase {
 		this.startHrTime = process.hrtime();
 	}
 
+	/**
+	 * 
+	 * 
+	 * 
+	 * @memberOf TestCase
+	 */
 	finish() {
 		const diff = process.hrtime(this.startHrTime);
 		const count = this.stat.count;
@@ -96,6 +137,13 @@ class TestCase {
 		this.running = false;
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} resolve 
+	 * 
+	 * @memberOf TestCase
+	 */
 	cycling(resolve) {
 		if (Date.now() - this.startTime < this.time || this.stat.count < this.minSamples) {
 			for (let i = 0; i < this.cycles; i++) {
@@ -118,7 +166,19 @@ class TestCase {
 	}
 }
 
+/**
+ * 
+ * 
+ * @class Suite
+ */
 class Suite {
+	/**
+	 * Creates an instance of Suite.
+	 * @param {any} parent 
+	 * @param {any} opts 
+	 * 
+	 * @memberOf Suite
+	 */
 	constructor(parent, opts) {
 		this.parent = parent;
 		this.logger = this.parent.logger;
@@ -131,12 +191,24 @@ class Suite {
 			async: false,
 			name: "<Anonymous suite>",
 			time: 5000,
-			cycles: 1000,
-			minSamples: 5,
+			minSamples: 0,
 			spinner: true
 		}, opts);
+
+		if (!this.cycles)
+			this.cycles = this.minSamples >  0 ? this.minSamples : 1000;
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} [opts={}] 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
 	add(name, fn, opts = {}) {
 		const self = this;
 		const async = opts.async != null ? opts.async : this.async;
@@ -145,24 +217,18 @@ class Suite {
 		this.tests.push(test);
 
 		return self;
-		/*
-		if (async) {
-			this.suite.add(name, {
-				defer: true,
-				fn(deferred) {
-					const res = fn();
-					if (res.then)
-						return fn().then(() => deferred.resolve());
-					else
-						return deferred.resolve();
-				},
-				onStart
-			});
-		} else {
-			this.suite.add(name, { fn, onStart });
-		}*/
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} [opts={}] 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
 	skip(name, fn, opts = {}) {
 		const async = opts.async != null ? opts.async : this.parent.async;
 
@@ -173,6 +239,13 @@ class Suite {
 		return this;
 	}
 
+	/**
+	 * 
+	 * 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
 	run() {
 		let self = this;
 		return new Promise((resolve, reject) => {
@@ -193,6 +266,15 @@ class Suite {
 		});
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} list 
+	 * @param {any} resolve 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
 	runTest(list, resolve) {
 		const self = this;
 		const test = list.shift();
@@ -227,6 +309,13 @@ class Suite {
 		})
 	}
 		
+	/**
+	 * 
+	 * 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
 	calculateResult() {
 		const result = this.tests.map(test => {
 			return {
@@ -286,7 +375,19 @@ class Suite {
 	}
 }
 
+/**
+ * 
+ * 
+ * @class Benchmarkify
+ */
 class Benchmarkify {
+	/**
+	 * Creates an instance of Benchmarkify.
+	 * @param {any} name 
+	 * @param {any} logger 
+	 * 
+	 * @memberOf Benchmarkify
+	 */
 	constructor(name, logger) {
 		this.name = name;
 		this.logger = logger || console;
@@ -295,11 +396,24 @@ class Benchmarkify {
 		this.suites = [];
 	}
 
+	/**
+	 * 
+	 * 
+	 * 
+	 * @memberOf Benchmarkify
+	 */
 	printPlatformInfo() {
 		require("./platform")(this.logger);
 		this.logger.log("");	
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {boolean} [platformInfo=true] 
+	 * 
+	 * @memberOf Benchmarkify
+	 */
 	printHeader(platformInfo = true) {
 		let title = "  " + this.name + "  ";
 		let lines = "=".repeat(title.length);
@@ -312,6 +426,14 @@ class Benchmarkify {
 			this.printPlatformInfo();
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} opts 
+	 * @returns 
+	 * 
+	 * @memberOf Benchmarkify
+	 */
 	createSuite(opts) {
 		const suite = new Suite(this, opts);
 
@@ -320,11 +442,25 @@ class Benchmarkify {
 		return suite;
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param {any} suites 
+	 * @returns 
+	 * 
+	 * @memberOf Benchmarkify
+	 */
 	run(suites) {
 		const self = this;
 		let list = Array.from(suites || this.suites);
 		let results = [];
 
+		/**
+		 * 
+		 * 
+		 * @param {any} suite 
+		 * @returns 
+		 */
 		function run(suite) {
 			return suite.run().then(res => {
 				results.push(res);
@@ -344,7 +480,5 @@ class Benchmarkify {
 		return run(list.shift()).then(() => results);
 	}
 }
-
-Benchmarkify.Promise = Promise;
 
 module.exports = Benchmarkify;

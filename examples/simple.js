@@ -10,7 +10,6 @@ benchmark.createSuite({
 	name: "String concatenate", 
 	async: false,
 	time: 1000
-
 }).add("Concat with '+'", () => {
 	let s = "";
 	for(let i = 0; i < ITERATION; i++)
