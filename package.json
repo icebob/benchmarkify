@@ -18,7 +18,7 @@
   "author": "Icebob",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "3.4.7",
+    "bluebird": "3.5.0",
     "chalk": "1.1.3",
     "lodash": "4.17.4",
     "ora": "1.2.0",
