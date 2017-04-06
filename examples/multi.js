@@ -8,7 +8,7 @@ let bench1 = benchmark.createSuite({ name: "Date performance", async: false, tim
 
 const cycle = 10 * 1000;
 
-bench1.skip("Call Date.now", () => {
+bench1.add("Call Date.now", () => {
 	let c = 0;
 	let time;
 	while (++c < cycle) {

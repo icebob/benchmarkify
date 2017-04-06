@@ -152,119 +152,9 @@ class Suite {
 		let self = this;
 		return new Promise((resolve, reject) => {
 			self.running = true;
-
 			self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
 
-			let list = Array.from(this.tests);
-
-			function run(test) {
-
-				if (test.skip) {
-					if (self.parent.spinner !== false)
-						spinner.warn(chalk.yellow("[SKIP] " + test.name));	
-					else
-						self.logger.log(chalk.yellow("[SKIP]", test.name));
-
-					if (list.length > 0)
-						return run(list.shift());
-					else
-						return resolve();
-				}
-
-				if (self.parent.spinner !== false) {
-					spinner.text = `Running '${test.name}'...`;
-					spinner.start();
-				}
-				
-				return test.run().then(() => {
-					const ipsText = formatNumber(test.stat.ips);
-					const resText = `${test.name} x ${ipsText} ips/sec`;
-
-					if (self.parent.spinner !== false)
-						spinner.succeed(resText);	
-					else
-						self.logger.log("››", resText);
-
-					if (list.length > 0)
-						return run(list.shift());
-
-					return resolve();
-
-				}).catch(err => {
-
-					if (self.parent.spinner !== false)
-						spinner.fail(chalk.red("[ERR] " + test.name));	
-					else
-						self.logger.log(chalk.red("[ERR] " + test.name));
-					
-					self.logger.error(err);
-
-					if (list.length > 0)
-						return run(list.shift());
-
-					return resolve();					
-				})
-			}
-
-			run(list.shift());
-
-			/*
-			this.suite.on("cycle", function(event) {
-				let bench = event.target;
-				if (bench.error)
-					self.logger.error(chalk.red.bold(String(bench), bench.error.message, "\n", bench.error.stack || ""));
-				else {
-					if (self.opts.spinner !== false)
-						spinner.succeed(String(bench));	
-					else
-						self.logger.log("››", String(bench));						
-				}
-			})
-			.on("complete", function() {
-				self.logger.log("");
-				let tests = this.filter("successful");
-				let maxTitle = tests.reduce((a, b) => a.name.length > b.name.length ? a : b).name;				
-				let fastest = this.filter("fastest")[0];
-				let pe = _.padEnd;
-				let ps = _.padStart;
-
-				tests.forEach(bench => {
-					const c = bench == fastest ? chalk.green : chalk.cyan;
-					let diff = ((bench.hz / fastest.hz) * 100) - 100;
-					let line = [
-						"  ", 
-						pe(bench.name, maxTitle.length + 1), 
-						ps(Number(diff).toFixed(2) + "%", 8), 
-						ps("  (" + Benchmark.formatNumber(bench.hz.toFixed(0)) + " ops/sec)", 20)
-					];
-					self.logger.log(c.bold(...line));
-				});
-				self.logger.log("-----------------------------------------------------------------------\n");
-
-				if (self.opts.spinner !== false)
-					spinner.stop();
-
-				let results = {
-					name: self.opts.name
-				};
-
-				results.tests = tests.map(bench => ({
-					name: bench.name,
-					count: bench.hz
-				}));
-
-				results.timestamp = Date.now();
-				results.generated = new Date().toString();
-
-				return resolve(results);
-			});
-
-			this.logger.log(chalk.magenta.bold("Suite:", this.opts.name));
-			this.suite.run({
-				defer: this.async,
-				async: this.async
-			});
-			*/
+			this.runTest(Array.from(this.tests), resolve);
 
 		}).then(() => {
 			// Generate results from test stat
@@ -278,6 +168,47 @@ class Suite {
 		});
 	}
 
+	runTest(list, resolve) {
+		const test = list.shift();
+
+		if (test.skip) {
+			if (this.parent.spinner !== false)
+				spinner.warn(chalk.yellow("[SKIP] " + test.name));	
+			else
+				this.logger.log(chalk.yellow("[SKIP]", test.name));
+
+			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+		}
+
+		if (this.parent.spinner !== false) {
+			spinner.text = `Running '${test.name}'...`;
+			spinner.start();
+		}
+		
+		return test.run().then(() => {
+			const ipsText = formatNumber(test.stat.ips);
+			const resText = `${test.name} × ${ipsText} ips/sec`;
+
+			if (this.parent.spinner !== false)
+				spinner.succeed(resText);	
+			else
+				this.logger.log("››", resText);
+
+			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+
+		}).catch(err => {
+
+			if (this.parent.spinner !== false)
+				spinner.fail(chalk.red("[ERR] " + test.name));	
+			else
+				this.logger.log(chalk.red("[ERR] " + test.name));
+			
+			this.logger.error(err);
+
+			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+		})
+	}
+		
 	calculateResult() {
 		const result = this.tests.map(test => {
 			return {
