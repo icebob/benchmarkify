@@ -1,9 +1,9 @@
 "use strict";
 
 let Benchmarkify = require("../");
-Benchmarkify.printHeader("Multi example");
+let benchmark = new Benchmarkify("Multi example", { spinner: false }).printHeader();
 
-let bench1 = new Benchmarkify({ async: false, name: "Date performance"});
+let bench1 = benchmark.createSuite({ name: "Date performance", time: 1000 });
 
 const cycle = 10 * 1000;
 
@@ -13,6 +13,7 @@ bench1.add("Call Date.now", () => {
 	while (++c < cycle) {
 		time = Date.now();
 	}
+	//throw new Error("Csak úgy!");
 	return time;
 });
 
@@ -25,7 +26,7 @@ bench1.add("Call process.hrtime", () => {
 	return time;
 });
 
-let bench2 = new Benchmarkify({ async: false, name: "Increment integer"});
+let bench2 = benchmark.createSuite({ name: "Increment integer", time: 1000 });
 
 const ITERATION = 1000;
 let i1 = 0;
@@ -34,7 +35,7 @@ bench2.add("Increment with ++", () => {
 });
 
 let i2 = 0;
-bench2.add("Increment with +=", () => {
+bench2.ref("Increment with +=", () => {
 	i2 += 1;
 });
 
@@ -43,7 +44,6 @@ bench2.add("Increment with = i + 1", () => {
 	i3 = i3 + 1;
 });
 
-Benchmarkify.run([bench1, bench2])
-.then(res => {
-	console.log(res);
+benchmark.run([bench1, bench2]).then(res => {
+	console.log(JSON.stringify(res, null, 2));
 });
