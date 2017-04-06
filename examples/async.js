@@ -36,7 +36,7 @@ bench2.add("ES6 new Promise", done => {
 	});
 });
 
-let bench3 = benchmark.createSuite({ name: "Bluebird", time: 5000 })
+let bench3 = benchmark.createSuite({ name: "Bluebird", time: 5000 });
 
 bench3.add("Bluebird Promise.resolve", done => {
 	return PromiseBB.resolve().then(() => {

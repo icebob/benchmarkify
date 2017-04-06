@@ -24,5 +24,8 @@
     "lodash": "4.17.4",
     "ora": "1.2.0",
     "tiny-human-time": "1.2.0"
+  },
+  "devDependencies": {
+    "eslint": "3.19.0"
   }
 }

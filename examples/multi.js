@@ -28,15 +28,16 @@ bench1.add("Call process.hrtime", () => {
 
 let bench2 = benchmark.createSuite({ name: "Increment integer", time: 1000 });
 
-const ITERATION = 1000;
 let i1 = 0;
 bench2.add("Increment with ++", () => {
 	i1++;
+	return i1;
 });
 
 let i2 = 0;
 bench2.ref("Increment with +=", () => {
 	i2 += 1;
+	return i2;
 });
 
 let i3 = 0;

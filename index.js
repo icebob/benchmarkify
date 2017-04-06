@@ -57,7 +57,7 @@ class TestCase {
 			count: 0,
 			avg: null,			
 			rps: null
-		}
+		};
 	}
 
 	/**
@@ -182,7 +182,7 @@ class TestCase {
 	 * 
 	 * @memberOf TestCase
 	 */
-	cyclingAsyncCb(resolve, reject) {
+	cyclingAsyncCb(resolve) {
 		const self = this;
 		const fn = self.fn;
 		let c = 0;
@@ -341,7 +341,7 @@ class Suite {
 			this.tests.forEach(test => test.skip = test !== this.onlyTest);
 		}
 
-		return new Promise((resolve, reject) => {
+		return new Promise(resolve => {
 			self.running = true;
 			self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
 
@@ -403,7 +403,7 @@ class Suite {
 		}).catch(err => {
 			test.error = err;
 			return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
-		})
+		});
 	}
 		
 	/**
@@ -470,7 +470,8 @@ class Suite {
 			let item = {
 				name: test.name,
 				reference: test.reference
-			}
+			};
+
 			if (test === fastest)
 				item.fastest = true;
 
@@ -507,7 +508,7 @@ class Benchmarkify {
 		this.logger = opts.logger || console;
 		if (opts.spinner !== false) {
 			this.spinner = ora({ 
-				text: 'Running benchmark...', 
+				text: "Running benchmark...", 
 				spinner: { 
 					interval: 400, 
 					"frames": [
@@ -609,7 +610,7 @@ class Benchmarkify {
 					timestamp: Date.now(),
 					generated: new Date().toString(),
 					elapsedMs: Date.now() - start					
-				}
+				};
 			});
 		}
 
