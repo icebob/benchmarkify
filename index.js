@@ -1,7 +1,6 @@
 const _ = require("lodash");
 const Promise = require("bluebird");
 const chalk = require("chalk");
-const Benchmark = require("benchmark");
 
 const ora = require('ora');
 const spinner = ora({ 
@@ -19,26 +18,104 @@ const spinner = ora({
 	} 
 });
 
-class Benchmarkify {
-	constructor(opts) {
-		this.opts = _.defaultsDeep(opts, {
-			async: false,
-			name: ""
-		});
-		this.suite = new Benchmark.Suite;
-		this.logger = this.opts.logger || console;
-		this.async = this.opts.async;
+class TestCase {
+	constructor(suite, name, fn, async, opts) {
+		this.suite = suite;
+		this.name = name;
+		this.fn = fn;
+		this.async = async;
+		this.opts = opts || {};
+		this.skip = false;
+		this.done = false;
+		this.running = false;
+		this.cycle = this.opts.cycle || 1000;
+
+		this.timer = null;
+		this.startTime = null;
+		this.stopTime = null;
+		
+		this.stat = {
+			duration: null,
+			count: null,
+			avg: null,			
+			ips: null,
+			cycle: this.cycle
+		}
 	}
 
-	add(name, fn, async = this.async) {
-		let self = this;
-		let onStart = function() {
-			if (self.opts.spinner !== false) {
-				spinner.text = `Running '${name}'...`;
-				spinner.start();
-			}
-		};
+	run() {
+		const self = this;
+		return new Promise(resolve => {
+			// Start test
+			const timeout = self.opts.time || self.suite.time;
+			self.running = true;
+			self.stat.count = 0;
+			self.startTime = process.hrtime();
 
+			// Create timer
+			self.timer = setTimeout(() => {
+				const diff = process.hrtime(self.startTime);
+				self.stat.duration = diff[0] + diff[1] / 1e9;
+
+				self.stat.avg = self.stat.duration / self.stat.count;
+				self.stat.ips = self.stat.count / self.stat.duration;
+
+				self.done = true;
+				self.running = false;
+
+				resolve(self);
+
+			}, timeout);
+
+			// Run
+			if (self.async) {
+				self.callFnAsync();
+			} else {
+				self.callFn();
+			}
+		});
+	}
+
+	callFn() {
+		for (let i = 0; i < this.cycle; i++) {
+			this.fn();
+			this.stat.count++;
+		}
+		if (this.running) {
+			setImmediate(() => {
+				this.callFn();
+			});
+		}
+	}
+}
+
+class Suite {
+	constructor(parent, opts) {
+		this.parent = parent;
+		this.logger = this.parent.logger;
+		this.done = false;
+		this.running = false;
+
+		this.tests = [];
+
+		_.assign(this, {
+			async: false,
+			name: "<Anonymous suite>",
+			time: 5000,
+			iteration: 0,
+			spinner: true
+		}, opts);
+	}
+
+	add(name, fn, opts = {}) {
+		const self = this;
+		const async = opts.async != null ? opts.async : this.async;
+
+		const test = new TestCase(this, name, fn, async, opts);
+		this.tests.push(test);
+
+		return self;
+		/*
 		if (async) {
 			this.suite.add(name, {
 				defer: true,
@@ -53,16 +130,54 @@ class Benchmarkify {
 			});
 		} else {
 			this.suite.add(name, { fn, onStart });
-		}
+		}*/
 	}
 
 	skip() {
-		return Promise.resolve();
+		const async = opts.async != null ? opts.async : this.parent.async;
+
+		const test = new TestCase(this, name, fn, async, opts);
+		test.skip = true;
+		this.tests.push(test);
+
+		return this;
 	}
 
 	run() {
 		let self = this;
 		return new Promise((resolve, reject) => {
+			self.running = true;
+
+			self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
+
+			let list = Array.from(this.tests);
+
+			function run(test) {
+
+				if (self.parent.spinner !== false) {
+					spinner.text = `Running '${test.name}'...`;
+					spinner.start();
+				}
+				
+				return test.run().then(() => {
+					const ipsText = Number(test.stat.ips.toFixed(0)).toLocaleString();
+					const resText = `${test.name} x ${ipsText} ips/sec`;
+
+					if (self.parent.spinner !== false)
+						spinner.succeed(resText);	
+					else
+						self.logger.log("››", resText);
+
+					if (list.length > 0)
+						return run(list.shift());
+
+					resolve();
+				});
+			}
+
+			run(list.shift());
+
+			/*
 			this.suite.on("cycle", function(event) {
 				let bench = event.target;
 				if (bench.error)
@@ -118,28 +233,62 @@ class Benchmarkify {
 				defer: this.async,
 				async: this.async
 			});
-			
+			*/
+
+		}).then(() => {
+			// Generate results from test stat
+			const result = self.tests.map(test => {
+				return {
+					name: test.name,
+					skip: test.skip,
+					stat: test.stat
+				}
+			});
+
+			if (self.parent.spinner !== false)
+				spinner.stop();
+
+			return result;
 		});
 	}
+}
 
-	static printHeader(name, logger, platformInfo = true) {
-		logger = logger || console;
+class Benchmarkify {
+	constructor(name, logger) {
+		this.name = name;
+		this.logger = logger || console;
+		this.Promise = Promise;
 
-		let title = "  " + name + "  ";
-		let lines = "=".repeat(title.length);
-		logger.log(chalk.yellow.bold(lines));
-		logger.log(chalk.yellow.bold(title));
-		logger.log(chalk.yellow.bold(lines));
-		logger.log("");	
-
-		if (platformInfo) {
-			require("./platform")(logger);
-			logger.log("");	
-		}
+		this.suites = [];
 	}
 
-	static run(suites) {
-		let list = Array.from(suites);
+	printPlatformInfo() {
+		require("./platform")(this.logger);
+		this.logger.log("");	
+	}
+
+	printHeader(platformInfo = true) {
+		let title = "  " + this.name + "  ";
+		let lines = "=".repeat(title.length);
+		this.logger.log(chalk.yellow.bold(lines));
+		this.logger.log(chalk.yellow.bold(title));
+		this.logger.log(chalk.yellow.bold(lines));
+		this.logger.log("");	
+
+		if (platformInfo)
+			this.printPlatformInfo();
+	}
+
+	createSuite(opts) {
+		const suite = new Suite(this, opts);
+
+		this.suites.push(suite);
+
+		return suite;
+	}
+
+	run(suites) {
+		let list = Array.from(suites || this.suites);
 		let results = [];
 
 		function run(suite) {
@@ -149,7 +298,12 @@ class Benchmarkify {
 				if (list.length > 0)
 					return run(list.shift());
 
-				return results;
+				return {
+					name: this.name,
+					tests: results,
+					timestamp: Date.now(),
+					generated: new Date().toString()					
+				}
 			});
 		}
 
