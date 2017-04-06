@@ -31,20 +31,23 @@ class TestCase {
 		this.async = async;
 		this.opts = opts || {};
 		this.skip = false;
+		this.error = null;
 		this.done = false;
 		this.running = false;
-		this.cycle = this.opts.cycle || 1000;
+		this.time = this.opts.time || this.suite.time || 5000;
+		this.cycles = this.opts.cycles || this.suite.cycles || 1000;
+		this.minSamples = this.opts.minSamples || this.suite.minSamples || 5;
 
 		this.timer = null;
 		this.startTime = null;
-		this.stopTime = null;
+		this.startHrTime = null;
 		
 		this.stat = {
 			duration: null,
-			count: null,
+			cycle: 0,
+			count: 0,
 			avg: null,			
-			ips: null,
-			cycle: this.cycle
+			rps: null
 		}
 	}
 
@@ -53,44 +56,65 @@ class TestCase {
 		return new Promise(resolve => {
 			// Start test
 			const timeout = self.opts.time || self.suite.time;
-			self.running = true;
-			self.stat.count = 0;
-			self.startTime = process.hrtime();
+			
+			self.start();
 
 			// Create timer
 			self.timer = setTimeout(() => {
-				const diff = process.hrtime(self.startTime);
-				self.stat.duration = diff[0] + diff[1] / 1e9;
-
-				self.stat.avg = self.stat.duration / self.stat.count;
-				self.stat.ips = self.stat.count / self.stat.duration;
-
-				self.done = true;
-				self.running = false;
-
+				self.finish();
 				resolve(self);
-
 			}, timeout);
 
 			// Run
 			if (self.async) {
-				self.callFnAsync();
+				self.callFnAsync(resolve);
 			} else {
-				self.callFn();
+				self.cycling(resolve);
 			}
 		});
 	}
 
-	callFn() {
-		for (let i = 0; i < this.cycle; i++) {
-			this.fn();
-			this.stat.count++;
+	start() {
+		this.running = true;
+		this.stat.count = 0;
+		this.startTime = Date.now();
+		this.startHrTime = process.hrtime();
+	}
+
+	finish() {
+		const diff = process.hrtime(this.startHrTime);
+		const count = this.stat.count;
+		const duration = diff[0] + diff[1] / 1e9;
+
+		_.assign(this.stat, {
+			duration,
+			avg: duration / count,
+			rps: count / duration
+		});
+
+		this.done = true;
+		this.running = false;
+	}
+
+	cycling(resolve) {
+		if (Date.now() - this.startTime < this.time || this.stat.count < this.minSamples) {
+			for (let i = 0; i < this.cycles; i++) {
+				this.fn();
+				this.stat.count++;
+			}
+			this.stat.cycle++;
+			setImmediate(() => {
+				this.cycling(resolve);
+			});
+		} else {
+			this.finish();
+			resolve(this);
 		}
-		if (this.running) {
+		/*if (this.running) {
 			setImmediate(() => {
 				this.callFn();
 			});
-		}
+		}*/
 	}
 }
 
@@ -107,7 +131,8 @@ class Suite {
 			async: false,
 			name: "<Anonymous suite>",
 			time: 5000,
-			iteration: 0,
+			cycles: 1000,
+			minSamples: 5,
 			spinner: true
 		}, opts);
 	}
@@ -169,43 +194,36 @@ class Suite {
 	}
 
 	runTest(list, resolve) {
+		const self = this;
 		const test = list.shift();
 
-		if (test.skip) {
-			if (this.parent.spinner !== false)
-				spinner.warn(chalk.yellow("[SKIP] " + test.name));	
+		function printAndRun(type, msg, err) {
+			if (self.parent.spinner !== false)
+				spinner[type](msg);
 			else
-				this.logger.log(chalk.yellow("[SKIP]", test.name));
+				self.logger.log("››", msg);
 
-			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+			if (err)
+				self.logger.error(err);
+
+			return list.length > 0 ? self.runTest(list, resolve) : resolve();
+		}
+
+		if (test.skip) {
+			return printAndRun("warn", chalk.yellow("[SKIP] " + test.name));
 		}
 
 		if (this.parent.spinner !== false) {
 			spinner.text = `Running '${test.name}'...`;
 			spinner.start();
 		}
-		
-		return test.run().then(() => {
-			const ipsText = formatNumber(test.stat.ips);
-			const resText = `${test.name} × ${ipsText} ips/sec`;
 
-			if (this.parent.spinner !== false)
-				spinner.succeed(resText);	
-			else
-				this.logger.log("››", resText);
-
-			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+		return test.run().delay(200).then(() => {
+			return printAndRun("succeed", test.name + " × " + formatNumber(test.stat.rps) + " rps");
 
 		}).catch(err => {
 			test.error = err;
-			if (this.parent.spinner !== false)
-				spinner.fail(chalk.red("[ERR] " + test.name));	
-			else
-				this.logger.log(chalk.red("[ERR] " + test.name));
-			
-			this.logger.error(err);
-
-			return list.length > 0 ? this.runTest(list, resolve) : resolve();
+			return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
 		})
 	}
 		
@@ -219,14 +237,14 @@ class Suite {
 			}
 		});
 
-		let maxIps = 0;
+		let maxRps = 0;
 		let maxTitleLength = 0;
 		let fastest = null;
 		this.tests.forEach(test => {
 			if (test.skip) return;
 
-			if (test.stat.ips > maxIps) {
-				maxIps = test.stat.ips;
+			if (test.stat.rps > maxRps) {
+				maxRps = test.stat.rps;
 				fastest = test;
 			}
 
@@ -234,7 +252,7 @@ class Suite {
 				maxTitleLength = test.name.length;
 		});
 
-		//this.tests.sort((a, b) => b.stat.ips - a.stat.ips);
+		//this.tests.sort((a, b) => b.stat.rps - a.stat.rps);
 
 		if (fastest) {
 			let pe = _.padEnd;
@@ -250,12 +268,12 @@ class Suite {
 					return;
 				}
 				const c = test == fastest ? chalk.green : chalk.cyan;
-				let diff = ((test.stat.ips / fastest.stat.ips) * 100) - 100;
+				let diff = ((test.stat.rps / fastest.stat.rps) * 100) - 100;
 				let line = [
 					"  ", 
 					pe(test.name, maxTitleLength + 1), 
 					ps(Number(diff).toFixed(2) + "%", 8), 
-					ps("  (" + formatNumber(test.stat.ips) + " ips/sec)", 20),
+					ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 					"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
 				];
 				this.logger.log(c.bold(...line));
