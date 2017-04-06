@@ -17,6 +17,7 @@
   },
   "author": "Icebob",
   "license": "MIT",
+  "reveal": true,
   "dependencies": {
     "bluebird": "3.5.0",
     "chalk": "1.1.3",
