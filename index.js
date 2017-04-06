@@ -248,6 +248,9 @@ class Suite {
 	 */
 	run() {
 		let self = this;
+
+		self.maxTitleLength = this.tests.reduce((max, test) => Math.max(max, test.name.length), 0);
+
 		return new Promise((resolve, reject) => {
 			self.running = true;
 			self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
@@ -301,7 +304,8 @@ class Suite {
 		}
 
 		return test.run().delay(200).then(() => {
-			return printAndRun("succeed", test.name + " × " + formatNumber(test.stat.rps) + " rps");
+			let msg = _.padEnd(test.name, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 10);
+			return printAndRun("succeed", msg);
 
 		}).catch(err => {
 			test.error = err;
@@ -436,9 +440,7 @@ class Benchmarkify {
 	 */
 	createSuite(opts) {
 		const suite = new Suite(this, opts);
-
 		this.suites.push(suite);
-
 		return suite;
 	}
 
@@ -454,6 +456,7 @@ class Benchmarkify {
 		const self = this;
 		let list = Array.from(suites || this.suites);
 		let results = [];
+		let start = Date.now();
 
 		/**
 		 * 
@@ -463,21 +466,25 @@ class Benchmarkify {
 		 */
 		function run(suite) {
 			return suite.run().then(res => {
-				results.push(res);
+				results.push({
+					name: suite.name,
+					tests: res
+				});
 
 				if (list.length > 0)
 					return run(list.shift());
 
 				return {
 					name: self.name,
-					tests: results,
+					suites: results,
 					timestamp: Date.now(),
-					generated: new Date().toString()					
+					generated: new Date().toString(),
+					elapsedMs: Date.now() - start					
 				}
 			});
 		}
 
-		return run(list.shift()).then(() => results);
+		return run(list.shift());
 	}
 }
 
