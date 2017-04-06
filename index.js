@@ -414,16 +414,6 @@ class Suite {
 	 * @memberOf Suite
 	 */
 	calculateResult() {
-		const result = this.tests.map(test => {
-			return {
-				name: test.name,
-				skipped: test.skip,
-				reference: test.reference,
-				error: test.error ? test.error.toString(): null,
-				stat: test.skip ? null : test.stat
-			}
-		});
-
 		let maxRps = 0;
 		let maxTitleLength = 0;
 		let fastest = null;
@@ -443,9 +433,6 @@ class Suite {
 				maxTitleLength = test.name.length;
 		});
 
-		if (!reference)
-			reference = fastest;
-
 		//this.tests.sort((a, b) => b.stat.rps - a.stat.rps);
 
 		let pe = _.padEnd;
@@ -462,7 +449,7 @@ class Suite {
 			}
 			const baseRps = reference ? reference.stat.rps : fastest.stat.rps;
 			const c = test == fastest ? chalk.green : chalk.cyan;
-			let percent = ((test.stat.rps / baseRps) * 100) - 100;
+			test.stat.percent = ((test.stat.rps / baseRps) * 100) - 100;
 			let flag = test.async ? "*" : "";
 			if (test == reference)
 				flag += " (#)";
@@ -470,13 +457,32 @@ class Suite {
 			let line = [
 				"  ", 
 				pe(test.name + flag, maxTitleLength + 1), 
-				ps(formatNumber(percent, 2, true) + "%", 8), 
+				ps(formatNumber(test.stat.percent, 2, true) + "%", 8), 
 				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
 			];
 			this.logger.log(c.bold(...line));
 		});
 		this.logger.log("-----------------------------------------------------------------------\n");
+
+		// Generate result to return
+		const result = this.tests.map(test => {
+			let item = {
+				name: test.name,
+				skipped: test.skip,
+				reference: test.reference
+			}
+			if (test === fastest)
+				item.fastest = true;
+
+			if (test.error)
+				item.error = test.error.toString();
+
+			if (!test.skip)
+				item.stat = test.stat;
+
+			return item;
+		});
 
 		return result;
 	}
