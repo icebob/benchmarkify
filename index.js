@@ -469,7 +469,6 @@ class Suite {
 		const result = this.tests.map(test => {
 			let item = {
 				name: test.name,
-				skipped: test.skip,
 				reference: test.reference
 			}
 			if (test === fastest)
@@ -480,6 +479,8 @@ class Suite {
 
 			if (!test.skip)
 				item.stat = test.stat;
+			else
+				item.skipped = true;
 
 			return item;
 		});
