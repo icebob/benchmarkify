@@ -2,45 +2,56 @@
 
 let PromiseBB = require("bluebird");
 
-let Benchmarkify = require("../");
-Benchmarkify.printHeader("Promise vs BlueBird vs Native");
-
-let bench1 = new Benchmarkify({ async: true, name: "Promise"});
-
 function add(a, b) {
 	return a + b;
 }
 
-bench1.add("No promise", () => {
-	return add(5, 8);
-}, false);
+let Benchmarkify = require("../");
+let benchmark = new Benchmarkify("ES6 Promise vs BlueBird").printHeader();
 
-bench1.add("ES6 Promise.resolve", () => {
+let bench1 = benchmark.createSuite({ name: "Without promise", time: 5000 });
+
+bench1.add("Sync", () => {
+	add(5, 8);
+});
+
+bench1.add("Callback", done => {
+	add(5, 8);
+	done();
+});
+
+let bench2 = benchmark.createSuite({ name: "ES6", time: 5000 });
+
+bench2.add("ES6 Promise.resolve", done => {
 	return Promise.resolve().then(() => {
-		return add(5, 8);
+		add(5, 8);
+		done();
 	});
 });
 
-bench1.add("ES6 new Promise", () => {
+bench2.add("ES6 new Promise", done => {
 	return new Promise(resolve => {
 		resolve(add(5, 8));
+		done();
 	});
 });
 
-let bench2 = new Benchmarkify({ async: true, name: "BlueBird"});
+let bench3 = benchmark.createSuite({ name: "Bluebird", time: 5000 })
 
-bench2.add("Bluebird Promise.resolve", () => {
+bench3.add("Bluebird Promise.resolve", done => {
 	return PromiseBB.resolve().then(() => {
-		return add(5, 8);
+		add(5, 8);
+		done();
 	});
 });
 
-bench2.add("Bluebird new Promise", () => {
+bench3.add("Bluebird new Promise", done => {
 	return new PromiseBB(resolve => {
 		resolve(add(5, 8));
+		done();
 	});
 });
 
-Benchmarkify.run([bench1, bench2]).then(res => {
-	console.log(res);
+benchmark.run([bench1, bench2, bench3]).then(res => {
+	//console.log(JSON.stringify(res, null, 2));
 });

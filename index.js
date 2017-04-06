@@ -50,7 +50,7 @@ class TestCase {
 		this.suite = suite;
 		this.name = name;
 		this.fn = fn;
-		this.async = async;
+		this.async = fn.length > 0;
 		this.opts = opts || {};
 		this.skip = false;
 		this.error = null;
@@ -82,21 +82,14 @@ class TestCase {
 	 */
 	run() {
 		const self = this;
-		return new Promise(resolve => {
+		return new Promise((resolve, reject) => {
 			// Start test
-			const timeout = self.opts.time || self.suite.time;
-			
 			self.start();
-
-			// Create timer
-			self.timer = setTimeout(() => {
-				self.finish();
-				resolve(self);
-			}, timeout);
 
 			// Run
 			if (self.async) {
-				self.callFnAsync(resolve);
+				//self.cyclingAsync(resolve, reject);
+				self.cyclingAsyncCb(resolve, reject);
 			} else {
 				self.cycling(resolve);
 			}
@@ -150,19 +143,83 @@ class TestCase {
 				this.fn();
 				this.stat.count++;
 			}
+
 			this.stat.cycle++;
-			setImmediate(() => {
-				this.cycling(resolve);
-			});
+			setImmediate(() => this.cycling(resolve));
+
 		} else {
 			this.finish();
 			resolve(this);
 		}
-		/*if (this.running) {
-			setImmediate(() => {
-				this.callFn();
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param {any} resolve 
+	 * 
+	 * @memberOf TestCase
+	 */
+	cyclingAsync(resolve, reject) {
+		const self = this;
+		const fn = self.fn;
+		let c = 0;
+		function cycle() {
+			return fn().then(() => {
+				self.stat.count++;
+				c++;
+
+				if (c >= self.cycles) {
+					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
+						c = 0;
+						return new Promise(resolve => {
+							setImmediate(() => resolve(cycle()));
+						});
+					}
+				} else {
+					return cycle();
+				}
 			});
-		}*/
+		}
+
+		return cycle()
+			.then(() => {
+				self.finish();
+				resolve(self);
+			}).catch(reject);
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param {any} resolve 
+	 * 
+	 * @memberOf TestCase
+	 */
+	cyclingAsyncCb(resolve, reject) {
+		const self = this;
+		const fn = self.fn;
+		let c = 0;
+		function cycle() {
+			fn(function() {
+				self.stat.count++;
+				c++;
+
+				if (c >= self.cycles) {
+					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
+						c = 0;
+						setImmediate(() => cycle());
+					} else {
+						self.finish();
+						resolve(self);
+					}
+				} else {
+					cycle();
+				}
+			});
+		}
+
+		cycle();
 	}
 }
 
@@ -249,7 +306,7 @@ class Suite {
 	run() {
 		let self = this;
 
-		self.maxTitleLength = this.tests.reduce((max, test) => Math.max(max, test.name.length), 0);
+		self.maxTitleLength = this.tests.reduce((max, test) => Math.max(max, test.name.length), 0) + 2;
 
 		return new Promise((resolve, reject) => {
 			self.running = true;
@@ -304,7 +361,8 @@ class Suite {
 		}
 
 		return test.run().delay(200).then(() => {
-			let msg = _.padEnd(test.name, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 10);
+			const flag = test.async ? "*" : "";
+			let msg = _.padEnd(test.name + flag, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 20);
 			return printAndRun("succeed", msg);
 
 		}).catch(err => {
@@ -362,9 +420,10 @@ class Suite {
 				}
 				const c = test == fastest ? chalk.green : chalk.cyan;
 				let diff = ((test.stat.rps / fastest.stat.rps) * 100) - 100;
+				const flag = test.async ? "*" : "";
 				let line = [
 					"  ", 
-					pe(test.name, maxTitleLength + 1), 
+					pe(test.name + flag, maxTitleLength + 1), 
 					ps(Number(diff).toFixed(2) + "%", 8), 
 					ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 					"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
@@ -428,6 +487,8 @@ class Benchmarkify {
 
 		if (platformInfo)
 			this.printPlatformInfo();
+
+		return this;
 	}
 
 	/**

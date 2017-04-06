@@ -1,8 +1,7 @@
 "use strict";
 
 let Benchmarkify = require("../");
-let benchmark = new Benchmarkify("Multi example");
-benchmark.printHeader();
+let benchmark = new Benchmarkify("Multi example").printHeader();
 
 let bench1 = benchmark.createSuite({ name: "Date performance", async: false, time: 1000 });
 
@@ -16,7 +15,7 @@ bench1.add("Call Date.now", () => {
 	}
 	//throw new Error("Csak úgy!");
 	return time;
-},{ minSamples: 8000 });
+});
 
 bench1.add("Call process.hrtime", () => {
 	let c = 0;
@@ -45,7 +44,6 @@ bench2.add("Increment with = i + 1", () => {
 	i3 = i3 + 1;
 });
 
-benchmark.run([bench1, bench2])
-.then(res => {
+benchmark.run([bench1, bench2]).then(res => {
 	console.log(JSON.stringify(res, null, 2));
 });

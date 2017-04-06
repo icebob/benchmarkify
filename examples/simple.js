@@ -1,8 +1,7 @@
 "use strict";
 
 let Benchmarkify = require("../");
-let benchmark = new Benchmarkify("Simple example");
-benchmark.printHeader();
+let benchmark = new Benchmarkify("Simple example").printHeader();
 
 const ITERATION = 1000;
 
