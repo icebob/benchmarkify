@@ -14,7 +14,7 @@ bench1.add("Call Date.now", () => {
 	while (++c < cycle) {
 		time = Date.now();
 	}
-	//throw new Error("Csak úgy!");
+	throw new Error("Csak úgy!");
 	return time;
 });
 

@@ -197,7 +197,7 @@ class Suite {
 			return list.length > 0 ? this.runTest(list, resolve) : resolve();
 
 		}).catch(err => {
-
+			test.error = err;
 			if (this.parent.spinner !== false)
 				spinner.fail(chalk.red("[ERR] " + test.name));	
 			else
@@ -214,6 +214,7 @@ class Suite {
 			return {
 				name: test.name,
 				skipped: test.skip,
+				error: test.error ? test.error.toString(): null,
 				stat: test.skip ? null : test.stat
 			}
 		});
@@ -242,6 +243,10 @@ class Suite {
 			this.tests.forEach(test => {
 				if (test.skip) {
 					this.logger.log(chalk.yellow("  ", test.name, "(skipped)"));
+					return;
+				}
+				if (test.error) {
+					this.logger.log(chalk.red("  ", test.name, "(error: " + test.error.message + ")"));
 					return;
 				}
 				const c = test == fastest ? chalk.green : chalk.cyan;
