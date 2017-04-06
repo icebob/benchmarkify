@@ -4,20 +4,6 @@ const chalk = require("chalk");
 const humanize = require('tiny-human-time');
 
 const ora = require('ora');
-const spinner = ora({ 
-	text: 'Running benchmark...', 
-	spinner: { 
-		interval: 400, 
-		"frames": [
-			".  ",
-			".. ",
-			"...",
-			" ..",
-			"  .",
-			"   "
-		]
-	} 
-});
 
 /**
  * 
@@ -26,8 +12,11 @@ const spinner = ora({
  * @param {number} [decimals=0] 
  * @returns 
  */
-function formatNumber(value, decimals = 0) {
-	return Number(value.toFixed(decimals)).toLocaleString();
+function formatNumber(value, decimals = 0, sign = false) {
+	let res = Number(value.toFixed(decimals)).toLocaleString();
+	if (sign && value > 0.0)
+		res = "+" + res;
+	return res;
 }
 
 /**
@@ -41,19 +30,17 @@ class TestCase {
 	 * @param {any} suite 
 	 * @param {any} name 
 	 * @param {any} fn 
-	 * @param {any} async 
 	 * @param {any} opts 
 	 * 
 	 * @memberOf TestCase
 	 */
-	constructor(suite, name, fn, async, opts) {
+	constructor(suite, name, fn, opts) {
 		this.suite = suite;
 		this.name = name;
 		this.fn = fn;
 		this.async = fn.length > 0;
 		this.opts = opts || {};
 		this.skip = false;
-		this.error = null;
 		this.done = false;
 		this.running = false;
 		this.time = this.opts.time || this.suite.time || 5000;
@@ -88,7 +75,6 @@ class TestCase {
 
 			// Run
 			if (self.async) {
-				//self.cyclingAsync(resolve, reject);
 				self.cyclingAsyncCb(resolve, reject);
 			} else {
 				self.cycling(resolve);
@@ -159,7 +145,7 @@ class TestCase {
 	 * @param {any} resolve 
 	 * 
 	 * @memberOf TestCase
-	 */
+	 *
 	cyclingAsync(resolve, reject) {
 		const self = this;
 		const fn = self.fn;
@@ -187,7 +173,7 @@ class TestCase {
 				self.finish();
 				resolve(self);
 			}).catch(reject);
-	}
+	}*/
 
 	/**
 	 * 
@@ -200,6 +186,7 @@ class TestCase {
 		const self = this;
 		const fn = self.fn;
 		let c = 0;
+
 		function cycle() {
 			fn(function() {
 				self.stat.count++;
@@ -207,18 +194,22 @@ class TestCase {
 
 				if (c >= self.cycles) {
 					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
+						// Wait for new cycle
 						c = 0;
 						setImmediate(() => cycle());
 					} else {
+						// Finished
 						self.finish();
 						resolve(self);
 					}
 				} else {
+					// Next call
 					cycle();
 				}
 			});
 		}
 
+		// Start
 		cycle();
 	}
 }
@@ -239,21 +230,36 @@ class Suite {
 	constructor(parent, opts) {
 		this.parent = parent;
 		this.logger = this.parent.logger;
+		this.onlyTest = null;
 		this.done = false;
 		this.running = false;
 
 		this.tests = [];
 
 		_.assign(this, {
-			async: false,
 			name: "<Anonymous suite>",
 			time: 5000,
-			minSamples: 0,
-			spinner: true
+			minSamples: 0
 		}, opts);
 
 		if (!this.cycles)
 			this.cycles = this.minSamples >  0 ? this.minSamples : 1000;
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} opts 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
+	appendTest(name, fn, opts) {
+		const test = new TestCase(this, name, fn, opts);
+		this.tests.push(test);
+		return test;
 	}
 
 	/**
@@ -267,13 +273,23 @@ class Suite {
 	 * @memberOf Suite
 	 */
 	add(name, fn, opts = {}) {
-		const self = this;
-		const async = opts.async != null ? opts.async : this.async;
+		this.appendTest(name, fn, opts);
+		return this;
+	}
 
-		const test = new TestCase(this, name, fn, async, opts);
-		this.tests.push(test);
-
-		return self;
+	/**
+	 * 
+	 * 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} [opts={}] 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
+	only(name, fn, opts = {}) {
+		this.onlyTest = this.appendTest(name, fn, opts);
+		return this;
 	}
 
 	/**
@@ -287,11 +303,25 @@ class Suite {
 	 * @memberOf Suite
 	 */
 	skip(name, fn, opts = {}) {
-		const async = opts.async != null ? opts.async : this.parent.async;
-
-		const test = new TestCase(this, name, fn, async, opts);
+		const test = this.appendTest(name, fn, opts);
 		test.skip = true;
-		this.tests.push(test);
+
+		return this;
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param {any} name 
+	 * @param {any} fn 
+	 * @param {any} [opts={}] 
+	 * @returns 
+	 * 
+	 * @memberOf Suite
+	 */
+	ref(name, fn, opts = {}) {
+		const test = this.appendTest(name, fn, opts);
+		test.reference = true;
 
 		return this;
 	}
@@ -305,8 +335,11 @@ class Suite {
 	 */
 	run() {
 		let self = this;
-
 		self.maxTitleLength = this.tests.reduce((max, test) => Math.max(max, test.name.length), 0) + 2;
+
+		if (this.onlyTest) {
+			this.tests.forEach(test => test.skip = test !== this.onlyTest);
+		}
 
 		return new Promise((resolve, reject) => {
 			self.running = true;
@@ -315,13 +348,12 @@ class Suite {
 			this.runTest(Array.from(this.tests), resolve);
 
 		}).then(() => {
-			// Generate results from test stat
-
-			if (self.parent.spinner !== false)
-				spinner.stop();
+			if (self.parent.spinner)
+				self.parent.spinner.stop();
 
 			self.logger.log("");
 
+			// Generate results
 			return self.calculateResult();
 		});
 	}
@@ -340,8 +372,8 @@ class Suite {
 		const test = list.shift();
 
 		function printAndRun(type, msg, err) {
-			if (self.parent.spinner !== false)
-				spinner[type](msg);
+			if (self.parent.spinner)
+				self.parent.spinner[type](msg);
 			else
 				self.logger.log("››", msg);
 
@@ -352,14 +384,17 @@ class Suite {
 		}
 
 		if (test.skip) {
+			// Skip test
 			return printAndRun("warn", chalk.yellow("[SKIP] " + test.name));
 		}
 
-		if (this.parent.spinner !== false) {
-			spinner.text = `Running '${test.name}'...`;
-			spinner.start();
+		if (this.parent.spinner) {
+			// Refresh spinner
+			self.parent.spinner.text = `Running '${test.name}'...`;
+			self.parent.spinner.start();
 		}
 
+		// Run test
 		return test.run().delay(200).then(() => {
 			const flag = test.async ? "*" : "";
 			let msg = _.padEnd(test.name + flag, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 20);
@@ -383,6 +418,7 @@ class Suite {
 			return {
 				name: test.name,
 				skipped: test.skip,
+				reference: test.reference,
 				error: test.error ? test.error.toString(): null,
 				stat: test.skip ? null : test.stat
 			}
@@ -391,8 +427,12 @@ class Suite {
 		let maxRps = 0;
 		let maxTitleLength = 0;
 		let fastest = null;
+		let reference = null;
 		this.tests.forEach(test => {
 			if (test.skip) return;
+
+			if (test.reference)
+				reference = test;
 
 			if (test.stat.rps > maxRps) {
 				maxRps = test.stat.rps;
@@ -403,36 +443,40 @@ class Suite {
 				maxTitleLength = test.name.length;
 		});
 
+		if (!reference)
+			reference = fastest;
+
 		//this.tests.sort((a, b) => b.stat.rps - a.stat.rps);
 
-		if (fastest) {
-			let pe = _.padEnd;
-			let ps = _.padStart;
+		let pe = _.padEnd;
+		let ps = _.padStart;
 
-			this.tests.forEach(test => {
-				if (test.skip) {
-					this.logger.log(chalk.yellow("  ", test.name, "(skipped)"));
-					return;
-				}
-				if (test.error) {
-					this.logger.log(chalk.red("  ", test.name, "(error: " + test.error.message + ")"));
-					return;
-				}
-				const c = test == fastest ? chalk.green : chalk.cyan;
-				let diff = ((test.stat.rps / fastest.stat.rps) * 100) - 100;
-				const flag = test.async ? "*" : "";
-				let line = [
-					"  ", 
-					pe(test.name + flag, maxTitleLength + 1), 
-					ps(Number(diff).toFixed(2) + "%", 8), 
-					ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
-					"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
-				];
-				this.logger.log(c.bold(...line));
-			});
-			this.logger.log("-----------------------------------------------------------------------\n");
+		this.tests.forEach(test => {
+			if (test.skip) {
+				this.logger.log(chalk.yellow("  ", test.name, "(skipped)"));
+				return;
+			}
+			if (test.error) {
+				this.logger.log(chalk.red("  ", test.name, "(error: " + test.error.message + ")"));
+				return;
+			}
+			const baseRps = reference ? reference.stat.rps : fastest.stat.rps;
+			const c = test == fastest ? chalk.green : chalk.cyan;
+			let percent = ((test.stat.rps / baseRps) * 100) - 100;
+			let flag = test.async ? "*" : "";
+			if (test == reference)
+				flag += " (#)";
 
-		}
+			let line = [
+				"  ", 
+				pe(test.name + flag, maxTitleLength + 1), 
+				ps(formatNumber(percent, 2, true) + "%", 8), 
+				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
+				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
+			];
+			this.logger.log(c.bold(...line));
+		});
+		this.logger.log("-----------------------------------------------------------------------\n");
 
 		return result;
 	}
@@ -451,9 +495,26 @@ class Benchmarkify {
 	 * 
 	 * @memberOf Benchmarkify
 	 */
-	constructor(name, logger) {
+	constructor(name, opts = {}) {
 		this.name = name;
-		this.logger = logger || console;
+		this.logger = opts.logger || console;
+		if (opts.spinner !== false) {
+			this.spinner = ora({ 
+				text: 'Running benchmark...', 
+				spinner: { 
+					interval: 400, 
+					"frames": [
+						".  ",
+						".. ",
+						"...",
+						" ..",
+						"  .",
+						"   "
+					]
+				} 
+			});
+		}
+
 		this.Promise = Promise;
 
 		this.suites = [];
