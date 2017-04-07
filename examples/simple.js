@@ -14,7 +14,7 @@ benchmark.createSuite({
 		s += "test" + i;
 	return s;
 
-}).add("Concat with array & join", () => {
+}).ref("Concat with array & join", () => {
 	let s = [];
 	for(let i = 0; i < ITERATION; i++)
 		s.push("test" + i);

@@ -458,7 +458,7 @@ class Suite {
 
 			let line = [
 				"  ", 
-				pe(test.name + flag, maxTitleLength + 1), 
+				pe(test.name + flag, maxTitleLength + 5), 
 				ps(formatNumber(test.stat.percent, 2, true) + "%", 8), 
 				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
