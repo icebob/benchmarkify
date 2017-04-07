@@ -6,10 +6,11 @@ const humanize = require('tiny-human-time');
 const ora = require('ora');
 
 /**
+ * Formatting number
  * 
- * 
- * @param {any} value 
- * @param {number} [decimals=0] 
+ * @param {any} value Number value
+ * @param {number} [decimals=0] Count of decimals
+ * @param {boolean} [sign=false] Put '+' sign if the number is positive
  * @returns 
  */
 function formatNumber(value, decimals = 0, sign = false) {
@@ -20,17 +21,18 @@ function formatNumber(value, decimals = 0, sign = false) {
 }
 
 /**
- * 
+ * Test case class
  * 
  * @class TestCase
  */
 class TestCase {
 	/**
 	 * Creates an instance of TestCase.
-	 * @param {any} suite 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} opts 
+	 * 
+	 * @param {Suite} suite 
+	 * @param {String} name 
+	 * @param {Function} fn 
+	 * @param {Object} opts 
 	 * 
 	 * @memberOf TestCase
 	 */
