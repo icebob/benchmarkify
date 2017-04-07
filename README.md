@@ -24,7 +24,7 @@ let benchmark = new Benchmarkify("Simple example").printHeader();
 let Benchmarkify = require("benchmarkify");
 
 // Create a new benchmark
-// The `.printHeader` will be print the name of benchmark & some
+// The `.printHeader` method will print the name of benchmark & some
 // information from the OS/PC to the console.
 let benchmark = new Benchmarkify("Simple example").printHeader();
 
