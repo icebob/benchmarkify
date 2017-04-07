@@ -31,13 +31,19 @@ let benchmark = new Benchmarkify("Simple example").printHeader();
 let i = 0;
 
 // Create a test suite
-benchmark.createSuite({ name: "Increment integer" })
-.add("Increment with ++", () => {
+let bench1 = benchmark.createSuite({ name: "Increment integer" });
+
+// Add first func
+bench1.add("Increment with ++", () => {
 	i++;
-})
-.add("Increment with i + 1", () => {
+});
+
+// Add second func. This result will be the reference
+bench1.ref("Increment with i + 1", () => {
 	i = i + 1;
-}).run()
+});
+
+bench1.run();
 ```
 
 **Output**
