@@ -1,4 +1,4 @@
-# benchmarkify
+# :zap: benchmarkify
 Benchmark framework for NodeJS for measure the execution time of JS codes.
 
 # Installation
@@ -46,11 +46,35 @@ benchmark.createSuite({ name: "Increment integer" })
 ```
 
 # API
+
 ## Class Benchmarkify
+
+### Constructor options
+* `logger` - default: console
+* `spinner` - default: true
+* `minSamples` - default 0
+
+### Methods
+* `createSuite` -
+* `run(suites: Array): Promise` - 
 
 ## Class Suite
 
+### Constructor options
+* `name` - 
+* `time` - default: 5000
+* `minSamples` - default 0
 
+### Methods
+* `add(name: string, fn: Function, opts: Object)` - 
+* `skip(name: string, fn: Function, opts: Object)` - 
+* `only(name: string, fn: Function, opts: Object)` - 
+* `ref(name: string, fn: Function, opts: Object)` - 
+* `run(): Promise` - 
+
+### Async functions
+
+## Resultset
 
 # License
 benchmarkify is available under the [MIT license](https://tldrlegal.com/license/mit-license).
