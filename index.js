@@ -224,13 +224,15 @@ class TestCase {
 class Suite {
 	/**
 	 * Creates an instance of Suite.
-	 * @param {any} parent 
-	 * @param {any} opts 
+	 * @param {Benchmarkify} parent 
+	 * @param {String} name 
+	 * @param {Object} opts 
 	 * 
 	 * @memberOf Suite
 	 */
-	constructor(parent, opts) {
+	constructor(parent, name, opts) {
 		this.parent = parent;
+		this.name = name;
 		this.logger = this.parent.logger;
 		this.onlyTest = null;
 		this.done = false;
@@ -239,7 +241,6 @@ class Suite {
 		this.tests = [];
 
 		_.assign(this, {
-			name: "<Anonymous suite>",
 			time: 5000,
 			minSamples: 0
 		}, opts);
@@ -565,13 +566,14 @@ class Benchmarkify {
 	/**
 	 * 
 	 * 
+	 * @param {String} name
 	 * @param {any} opts 
 	 * @returns 
 	 * 
 	 * @memberOf Benchmarkify
 	 */
-	createSuite(opts) {
-		const suite = new Suite(this, opts);
+	createSuite(name, opts) {
+		const suite = new Suite(this, name, opts);
 		this.suites.push(suite);
 		return suite;
 	}

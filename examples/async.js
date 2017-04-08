@@ -9,7 +9,7 @@ function add(a, b) {
 let Benchmarkify = require("../");
 let benchmark = new Benchmarkify("ES6 Promise vs BlueBird").printHeader();
 
-let bench1 = benchmark.createSuite({ name: "Without promise", time: 5000 });
+let bench1 = benchmark.createSuite("Without promise");
 
 bench1.add("Sync", () => {
 	add(5, 8);
@@ -20,7 +20,7 @@ bench1.add("Callback", done => {
 	done();
 });
 
-let bench2 = benchmark.createSuite({ name: "ES6", time: 5000 });
+let bench2 = benchmark.createSuite("ES6");
 
 bench2.add("ES6 Promise.resolve", done => {
 	return Promise.resolve().then(() => {
@@ -36,7 +36,7 @@ bench2.add("ES6 new Promise", done => {
 	});
 });
 
-let bench3 = benchmark.createSuite({ name: "Bluebird", time: 5000 });
+let bench3 = benchmark.createSuite("Bluebird");
 
 bench3.add("Bluebird Promise.resolve", done => {
 	return PromiseBB.resolve().then(() => {

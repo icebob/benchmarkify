@@ -3,7 +3,7 @@
 let Benchmarkify = require("../");
 let benchmark = new Benchmarkify("Multi example", { spinner: false }).printHeader();
 
-let bench1 = benchmark.createSuite({ name: "Date performance", time: 1000 });
+let bench1 = benchmark.createSuite("Date performance", { time: 1000 });
 
 const cycle = 10 * 1000;
 
@@ -26,7 +26,7 @@ bench1.add("Call process.hrtime", () => {
 	return time;
 });
 
-let bench2 = benchmark.createSuite({ name: "Increment integer", time: 1000 });
+let bench2 = benchmark.createSuite("Increment integer", { time: 1000 });
 
 let i1 = 0;
 bench2.add("Increment with ++", () => {
