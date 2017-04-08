@@ -75,7 +75,7 @@ If you need the results in JSON use `.then` after `run()`
 bench1.run().then(res => console.log(res));
 ```
 Result on console:
-```json
+```js
 [
 	{
 		name: 'Increment with ++',
@@ -109,6 +109,10 @@ Result on console:
 
 ## Class Benchmarkify
 
+```js
+let benchmark = new Benchmarkify("Benchmark #1", opts);
+```
+
 ### Constructor options
 * `logger` - print messages to this logger. Default: `console`
 * `spinner` - show spinner when running tests. Default: `true`
@@ -120,21 +124,30 @@ Result on console:
 
 ## Class Suite
 
+```js
+let bench1 = benchmark.createSuite("Date performance", { time: 1000 });
+```
+
 ### Constructor options
-* `name` - 
-* `time` - default: 5000
-* `minSamples` - default 0
+* `name` - Name of suite.
+* `time` - Time of test. Default: `5000` (5sec)
+* `minSamples` - Minimum samples. Default `0` - disabled
 
 ### Methods
-* `add(name: string, fn: Function, opts: Object)` - 
-* `skip(name: string, fn: Function, opts: Object)` - 
-* `only(name: string, fn: Function, opts: Object)` - 
-* `ref(name: string, fn: Function, opts: Object)` - 
-* `run(): Promise` - 
+* `add(name: string, fn: Function, opts: Object)` - Add a function to the suite
+* `skip(name: string, fn: Function, opts: Object)` - Skip the function
+* `only(name: string, fn: Function, opts: Object)` - Run only this function
+* `ref(name: string, fn: Function, opts: Object)` - Add a function and it'll be the reference
+* `run(): Promise` - Run the suite.
 
 ### Async functions
+If you would like to test async function use the `done` callback.
 
-## Resultset
+```js
+bench.add("Async call test", done => {
+	asyncFunction(data).then(() => done());
+});
+```
 
 # License
 Benchmarkify is available under the [MIT license](https://tldrlegal.com/license/mit-license).
