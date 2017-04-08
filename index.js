@@ -471,12 +471,14 @@ class Suite {
 		// Generate result to return
 		const result = this.tests.map(test => {
 			let item = {
-				name: test.name,
-				reference: test.reference
+				name: test.name
 			};
 
 			if (test === fastest)
 				item.fastest = true;
+
+			if (test.reference)
+				item.reference = true;
 
 			if (test.error)
 				item.error = test.error.toString();

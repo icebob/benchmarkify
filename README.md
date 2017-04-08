@@ -8,16 +8,6 @@ $ npm install benchmarkify --save-dev
 
 # Usage
 
-```js
-// Load
-let Benchmarkify = require("benchmarkify");
-
-// Create a new benchmark
-// The `.printHeader` will be print the name of benchmark & some
-// information from the OS/PC to the console.
-let benchmark = new Benchmarkify("Simple example").printHeader();
-```
-
 **Example benchmark suite**
 ```js
 let Benchmarkify = require("benchmarkify");
@@ -79,7 +69,6 @@ Result on console:
 [
 	{
 		name: 'Increment with ++',
-		reference: undefined,
 		fastest: true,
 		stat: {
 			duration: 4.999651845,
