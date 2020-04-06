@@ -5,7 +5,7 @@ let benchmark = new Benchmarkify("Simple example").printHeader();
 
 const ITERATION = 1000;
 
-benchmark.createSuite("String concatenate", { time: 1000 })
+benchmark.createSuite("String concatenate", { time: 1000, cycles: 5000 })
 	.add("Concat with '+'", () => {
 		let s = "";
 		for(let i = 0; i < ITERATION; i++)
