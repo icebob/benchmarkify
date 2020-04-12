@@ -7,11 +7,11 @@ const ora = require('ora');
 
 /**
  * Formatting number
- * 
+ *
  * @param {any} value Number value
  * @param {number} [decimals=0] Count of decimals
  * @param {boolean} [sign=false] Put '+' sign if the number is positive
- * @returns 
+ * @returns
  */
 function formatNumber(value, decimals = 0, sign = false) {
 	let res = Number(value.toFixed(decimals)).toLocaleString();
@@ -22,18 +22,18 @@ function formatNumber(value, decimals = 0, sign = false) {
 
 /**
  * Test case class
- * 
+ *
  * @class TestCase
  */
 class TestCase {
 	/**
 	 * Creates an instance of TestCase.
-	 * 
-	 * @param {Suite} suite 
-	 * @param {String} name 
-	 * @param {Function} fn 
-	 * @param {Object} opts 
-	 * 
+	 *
+	 * @param {Suite} suite
+	 * @param {String} name
+	 * @param {Function} fn
+	 * @param {Object} opts
+	 *
 	 * @memberOf TestCase
 	 */
 	constructor(suite, name, fn, opts) {
@@ -45,28 +45,28 @@ class TestCase {
 		this.skip = false;
 		this.done = false;
 		this.running = false;
-		this.time = this.opts.time || this.suite.time || 5000;
-		this.cycles = this.opts.cycles || this.suite.cycles || 1000;
-		this.minSamples = this.opts.minSamples || this.suite.minSamples || 5;
+		this.time = Math.max(this.opts.time || this.suite.time || 5000, 0);
+		this.cycles = Math.max(this.opts.cycles || this.suite.cycles || 1000, 0);
+		this.minSamples = Math.max(this.opts.minSamples || this.suite.minSamples || 5, 0);
 
+		this.cycleTimes = [];
 		this.timer = null;
 		this.startTime = null;
-		this.startHrTime = null;
-		
+
 		this.stat = {
 			duration: null,
 			cycle: 0,
 			count: 0,
-			avg: null,			
+			avg: null,
 			rps: null
 		};
 	}
 
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf TestCase
 	 */
 	run() {
@@ -85,28 +85,28 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf TestCase
 	 */
 	start() {
 		this.running = true;
 		this.stat.count = 0;
 		this.startTime = Date.now();
-		this.startHrTime = process.hrtime();
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf TestCase
 	 */
 	finish() {
-		const diff = process.hrtime(this.startHrTime);
 		const count = this.stat.count;
-		const duration = diff[0] + diff[1] / 1e9;
+		const duration = 0
+			+ this.cycleTimes.reduce((sum, [seconds]) => (sum + seconds), 0)
+			+ this.cycleTimes.reduce((sum, [, nanoseconds]) => (sum + nanoseconds), 0) / 1e9;
 
 		_.assign(this.stat, {
 			duration,
@@ -119,19 +119,25 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
+	 *
+	 *
+	 * @param {any} resolve
+	 *
 	 * @memberOf TestCase
 	 */
 	cycling(resolve) {
-		if (Date.now() - this.startTime < this.time || this.stat.count < this.minSamples) {
-			for (let i = 0; i < this.cycles; i++) {
+		if (
+			this.stat.count < this.minSamples
+			|| Date.now() - this.startTime < this.time
+		) {
+			const startCycle = process.hrtime();
+
+			for (let i = this.cycles; i > 0; --i) {
 				this.fn();
-				this.stat.count++;
 			}
 
+			this.cycleTimes.push(process.hrtime(startCycle))
+			this.stat.count += this.cycles;
 			this.stat.cycle++;
 			setImmediate(() => this.cycling(resolve));
 
@@ -142,92 +148,61 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
-	 * @memberOf TestCase
 	 *
-	cyclingAsync(resolve, reject) {
-		const self = this;
-		const fn = self.fn;
-		let c = 0;
-		function cycle() {
-			return fn().then(() => {
-				self.stat.count++;
-				c++;
-
-				if (c >= self.cycles) {
-					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
-						c = 0;
-						return new Promise(resolve => {
-							setImmediate(() => resolve(cycle()));
-						});
-					}
-				} else {
-					return cycle();
-				}
-			});
-		}
-
-		return cycle()
-			.then(() => {
-				self.finish();
-				resolve(self);
-			}).catch(reject);
-	}*/
-
-	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
+	 *
+	 * @param {any} resolve
+	 *
 	 * @memberOf TestCase
 	 */
 	cyclingAsyncCb(resolve) {
 		const self = this;
 		const fn = self.fn;
-		let c = 0;
-
-		function cycle() {
-			fn(function() {
-				self.stat.count++;
-				c++;
-
-				if (c >= self.cycles) {
-					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
-						// Wait for new cycle
-						c = 0;
-						setImmediate(() => cycle());
-					} else {
-						// Finished
-						self.finish();
-						resolve(self);
-					}
-				} else {
-					// Next call
-					cycle();
-				}
-			});
-		}
 
 		// Start
-		cycle();
+		let counter = self.cycles;
+		let startCycle = process.hrtime();
+		return onCycleComplete();
+
+		function onCycleComplete() {
+			if (counter-- > 0) {
+				return fn(onCycleComplete);
+			}
+
+			self.stat.count += self.cycles;
+			self.cycleTimes.push(process.hrtime(startCycle));
+
+			if (
+				self.stat.count < self.minSamples
+				|| Date.now() - self.startTime < self.time
+			) {
+				// Wait for new cycle
+				setImmediate(() => {
+					counter = self.cycles;
+					startCycle = process.hrtime();
+					fn(onCycleComplete);
+				});
+
+			} else {
+				// Finished
+				self.finish();
+				resolve(self);
+			}
+		}
 	}
 }
 
 /**
- * 
- * 
+ *
+ *
  * @class Suite
  */
 class Suite {
 	/**
 	 * Creates an instance of Suite.
-	 * @param {Benchmarkify} parent 
-	 * @param {String} name 
-	 * @param {Object} opts 
-	 * 
+	 * @param {Benchmarkify} parent
+	 * @param {String} name
+	 * @param {Object} opts
+	 *
 	 * @memberOf Suite
 	 */
 	constructor(parent, name, opts) {
@@ -246,17 +221,17 @@ class Suite {
 		}, opts);
 
 		if (!this.cycles)
-			this.cycles = this.minSamples >  0 ? this.minSamples : 1000;
+			this.cycles = this.minSamples > 0 ? this.minSamples : 1000;
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} opts 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} opts
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	appendTest(name, fn, opts) {
@@ -266,13 +241,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	add(name, fn, opts = {}) {
@@ -281,13 +256,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	only(name, fn, opts = {}) {
@@ -296,13 +271,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	skip(name, fn, opts = {}) {
@@ -313,13 +288,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	ref(name, fn, opts = {}) {
@@ -330,10 +305,10 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	run() {
@@ -362,12 +337,12 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} list 
-	 * @param {any} resolve 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} list
+	 * @param {any} resolve
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	runTest(list, resolve) {
@@ -408,12 +383,12 @@ class Suite {
 			return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
 		});
 	}
-		
+
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	calculateResult() {
@@ -458,9 +433,9 @@ class Suite {
 				flag += " (#)";
 
 			let line = [
-				"  ", 
-				pe(test.name + flag, maxTitleLength + 5), 
-				ps(formatNumber(test.stat.percent, 2, true) + "%", 8), 
+				"  ",
+				pe(test.name + flag, maxTitleLength + 5),
+				ps(formatNumber(test.stat.percent, 2, true) + "%", 8),
 				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
 			];
@@ -496,26 +471,26 @@ class Suite {
 }
 
 /**
- * 
- * 
+ *
+ *
  * @class Benchmarkify
  */
 class Benchmarkify {
 	/**
 	 * Creates an instance of Benchmarkify.
-	 * @param {any} name 
-	 * @param {any} logger 
-	 * 
+	 * @param {any} name
+	 * @param {any} logger
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	constructor(name, opts = {}) {
 		this.name = name;
 		this.logger = opts.logger || console;
 		if (opts.spinner !== false) {
-			this.spinner = ora({ 
-				text: "Running benchmark...", 
-				spinner: { 
-					interval: 400, 
+			this.spinner = ora({
+				text: "Running benchmark...",
+				spinner: {
+					interval: 400,
 					"frames": [
 						".  ",
 						".. ",
@@ -524,7 +499,7 @@ class Benchmarkify {
 						"  .",
 						"   "
 					]
-				} 
+				}
 			});
 		}
 
@@ -534,21 +509,21 @@ class Benchmarkify {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	printPlatformInfo() {
 		require("./platform")(this.logger);
-		this.logger.log("");	
+		this.logger.log("");
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {boolean} [platformInfo=true] 
-	 * 
+	 *
+	 *
+	 * @param {boolean} [platformInfo=true]
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	printHeader(platformInfo = true) {
@@ -557,7 +532,7 @@ class Benchmarkify {
 		this.logger.log(chalk.yellow.bold(lines));
 		this.logger.log(chalk.yellow.bold(title));
 		this.logger.log(chalk.yellow.bold(lines));
-		this.logger.log("");	
+		this.logger.log("");
 
 		if (platformInfo)
 			this.printPlatformInfo();
@@ -566,12 +541,12 @@ class Benchmarkify {
 	}
 
 	/**
-	 * 
-	 * 
+	 *
+	 *
 	 * @param {String} name
-	 * @param {any} opts 
-	 * @returns 
-	 * 
+	 * @param {any} opts
+	 * @returns
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	createSuite(name, opts) {
@@ -581,24 +556,24 @@ class Benchmarkify {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} suites 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} suites
+	 * @returns
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	run(suites) {
 		const self = this;
 		let list = Array.from(suites || this.suites);
 		let results = [];
-		let start = Date.now();
+		const start = new Date();
 
 		/**
-		 * 
-		 * 
-		 * @param {any} suite 
-		 * @returns 
+		 *
+		 *
+		 * @param {any} suite
+		 * @returns
 		 */
 		function run(suite) {
 			return suite.run().then(res => {
@@ -610,12 +585,13 @@ class Benchmarkify {
 				if (list.length > 0)
 					return run(list.shift());
 
+				const now = new Date();
 				return {
 					name: self.name,
 					suites: results,
-					timestamp: Date.now(),
-					generated: new Date().toString(),
-					elapsedMs: Date.now() - start					
+					timestamp: +now,
+					generated: now.toString(),
+					elapsedMs: now - start
 				};
 			});
 		}
