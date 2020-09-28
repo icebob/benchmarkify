@@ -15,7 +15,7 @@ const ora = require('ora');
  */
 function formatNumber(value, decimals = 0, sign = false) {
 	if (value == null)
-		value = 0.0;
+		return "-";
 		
 	let res = Number(value.toFixed(decimals)).toLocaleString();
 	if (sign && value > 0.0)
