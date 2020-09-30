@@ -21,7 +21,7 @@
   "dependencies": {
     "bluebird": "^3.5.5",
     "chalk": "^2.4.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.20",
     "ora": "^3.4.0",
     "tiny-human-time": "^1.2.0"
   },
