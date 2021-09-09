@@ -10,17 +10,17 @@ $ npm install benchmarkify --save-dev
 
 **Example benchmark suite**
 ```js
-let Benchmarkify = require("benchmarkify");
+const Benchmarkify = require("benchmarkify");
 
 // Create a new benchmark
 // The `.printHeader` method will print the name of benchmark & some
 // information from the OS/PC to the console.
-let benchmark = new Benchmarkify("Simple example").printHeader();
+const benchmark = new Benchmarkify("Simple example").printHeader();
 
 let i = 0;
 
 // Create a test suite
-let bench1 = benchmark.createSuite("Increment integer");
+const bench1 = benchmark.createSuite("Increment integer");
 
 // Add first func
 bench1.add("Increment with ++", () => {
@@ -99,13 +99,15 @@ Result on console:
 ## Class Benchmarkify
 
 ```js
-let benchmark = new Benchmarkify("Benchmark #1", opts);
+const benchmark = new Benchmarkify("Benchmark #1", opts);
 ```
 
 ### Constructor options
 * `logger` - print messages to this logger. Default: `console`
 * `spinner` - show spinner when running tests. Default: `true`
 * `minSamples` - Minimum samples. Default: `0` - not used
+* `description` - Custom description field.
+* `meta` - To store any meta information. Result JSON contains it.
 
 ### Methods
 * `createSuite` - Create a new benchmark suite.
@@ -114,13 +116,15 @@ let benchmark = new Benchmarkify("Benchmark #1", opts);
 ## Class Suite
 
 ```js
-let bench1 = benchmark.createSuite("Date performance", { time: 1000 });
+const bench1 = benchmark.createSuite("Date performance", { time: 1000 });
 ```
 
 ### Constructor options
 * `name` - Name of suite.
 * `time` - Time of test. Default: `5000` (5sec)
 * `minSamples` - Minimum samples. Default `0` - disabled
+* `description` - Custom description field.
+* `meta` - To store any meta information. Result JSON contains it.
 
 ### Methods
 * `add(name: string, fn: Function, opts: Object)` - Add a function to the suite
@@ -128,6 +132,8 @@ let bench1 = benchmark.createSuite("Date performance", { time: 1000 });
 * `only(name: string, fn: Function, opts: Object)` - Run only this function
 * `ref(name: string, fn: Function, opts: Object)` - Add a function and it'll be the reference
 * `run(): Promise` - Run the suite.
+* `setup(fn): Promise` - Function to execute before test suite.
+* `tearDown(fn): Promise` - Function to execute after test suite.
 
 ### Async functions
 If you would like to test async function use the `done` callback.
@@ -138,11 +144,20 @@ bench.add("Async call test", done => {
 });
 ```
 
+or 
+
+```js
+bench.add("Async call test", async done => {
+	await asyncFunction(data)
+	done();
+});
+```
+
 # License
 Benchmarkify is available under the [MIT license](https://tldrlegal.com/license/mit-license).
 
 # Contact
 
-Copyright (C) 2017 Icebob
+Copyright (C) 2021 Icebob
 
 [![@icebob](https://img.shields.io/badge/github-icebob-green.svg)](https://github.com/icebob) [![@icebob](https://img.shields.io/badge/twitter-Icebobcsi-blue.svg)](https://twitter.com/Icebobcsi)

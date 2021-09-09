@@ -1,5 +1,5 @@
 const _ = require("lodash");
-const chalk = require("chalk");
+const kleur = require("kleur");
 const humanize = require("tiny-human-time");
 
 const ora = require("ora");
@@ -260,19 +260,23 @@ class Suite {
 	}
 
 	/**
-	 *
-	 * @param {*} fn
+	 * Add a "setup" function to be run before test.
+	 * 
+	 * @param {Function} fn
 	 */
 	setup(fn) {
 		this.setupFn = fn;
+		return this;
 	}
 
 	/**
-	 *
-	 * @param {*} fn
+	 * Add a "tearDown" function to be run after test.
+	 * 
+	 * @param {Function} fn
 	 */
 	tearDown(fn) {
 		this.tearDownFn = fn;
+		return this;
 	}
 
 	/**
@@ -380,7 +384,7 @@ class Suite {
 			.then(() => {
 				return new Promise(resolve => {
 					self.running = true;
-					self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
+					self.logger.log(kleur.magenta().bold(`Suite: ${self.name}`));
 
 					this.runTest(Array.from(this.tests), resolve);
 				});
@@ -424,7 +428,7 @@ class Suite {
 
 		if (test.skip) {
 			// Skip test
-			return printAndRun("warn", chalk.yellow("[SKIP] " + test.name));
+			return printAndRun("warn", kleur.yellow(`[SKIP] ${test.name}`));
 		}
 
 		if (this.parent.spinner) {
@@ -446,7 +450,7 @@ class Suite {
 			})
 			.catch(err => {
 				test.error = err;
-				return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
+				return printAndRun("fail", kleur.red("[ERR] " + test.name), err);
 			});
 	}
 
@@ -482,15 +486,15 @@ class Suite {
 
 		this.tests.forEach(test => {
 			if (test.skip) {
-				this.logger.log(chalk.yellow("  ", test.name, "(skipped)"));
+				this.logger.log(kleur.yellow(`   ${test.name} (skipped)`));
 				return;
 			}
 			if (test.error) {
-				this.logger.log(chalk.red("  ", test.name, "(error: " + test.error.message + ")"));
+				this.logger.log(kleur.red(`   ${test.name} (error: ${test.error.message})`));
 				return;
 			}
 			const baseRps = reference ? reference.stat.rps : fastest.stat.rps;
-			const c = test == fastest ? chalk.green : chalk.cyan;
+			const c = test == fastest ? kleur.green() : kleur.cyan();
 			test.stat.percent = (test.stat.rps / baseRps) * 100 - 100;
 			let flag = test.async ? "*" : "";
 			if (test == reference) flag += " (#)";
@@ -502,7 +506,7 @@ class Suite {
 				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
 			];
-			this.logger.log(c.bold(...line));
+			this.logger.log(c.bold(line.join(" ")));
 		});
 		this.logger.log(
 			"-----------------------------------------------------------------------\n"
@@ -585,9 +589,9 @@ class Benchmarkify {
 	printHeader(platformInfo = true) {
 		let title = "  " + this.name + "  ";
 		let lines = "=".repeat(title.length);
-		this.logger.log(chalk.yellow.bold(lines));
-		this.logger.log(chalk.yellow.bold(title));
-		this.logger.log(chalk.yellow.bold(lines));
+		this.logger.log(kleur.yellow().bold(lines));
+		this.logger.log(kleur.yellow().bold(title));
+		this.logger.log(kleur.yellow().bold(lines));
 		this.logger.log("");
 
 		if (platformInfo) this.printPlatformInfo();
