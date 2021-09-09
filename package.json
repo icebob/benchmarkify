@@ -19,13 +19,13 @@
   "license": "MIT",
   "reveal": true,
   "dependencies": {
-    "bluebird": "^3.5.5",
-    "chalk": "^2.4.2",
-    "lodash": "^4.17.20",
-    "ora": "^3.4.0",
+    "bluebird": "^3.7.2",
+    "chalk": "^4.1.2",
+    "lodash": "^4.17.21",
+    "ora": "^5.4.1",
     "tiny-human-time": "^1.2.0"
   },
   "devDependencies": {
-    "eslint": "^6.1.0"
+    "eslint": "^7.32.0"
   }
 }
