@@ -24,12 +24,12 @@ const bench1 = benchmark.createSuite("Increment integer");
 
 // Add first func
 bench1.add("Increment with ++", () => {
-	i++;
+    i++;
 });
 
 // Add second func. This result will be the reference
 bench1.ref("Increment with i + 1", () => {
-	i = i + 1;
+    i = i + 1;
 });
 
 bench1.run();
@@ -67,30 +67,30 @@ bench1.run().then(res => console.log(res));
 Result on console:
 ```js
 [
-	{
-		name: 'Increment with ++',
-		fastest: true,
-		stat: {
-			duration: 4.999651845,
-			cycle: 492086,
-			count: 492086000,
-			avg: 1.0160118038310376e-8,
-			rps: 98424053.36525989,
-			percent: 9.95071720945748
-		}
-	},
-	{
-		name: 'Increment with i + 1',
-		reference: true,
-		stat: {
-			duration: 4.999535403,
-			cycle: 447541,
-			count: 447541000,
-			avg: 1.117112265244972e-8,
-			rps: 89516517.82112603,
-			percent: 0
-		}
-	}
+    {
+        name: 'Increment with ++',
+        fastest: true,
+        stat: {
+            duration: 4.999651845,
+            cycle: 492086,
+            count: 492086000,
+            avg: 1.0160118038310376e-8,
+            rps: 98424053.36525989,
+            percent: 9.95071720945748
+        }
+    },
+    {
+        name: 'Increment with i + 1',
+        reference: true,
+        stat: {
+            duration: 4.999535403,
+            cycle: 447541,
+            count: 447541000,
+            avg: 1.117112265244972e-8,
+            rps: 89516517.82112603,
+            percent: 0
+        }
+    }
 ]
 ```
 
@@ -140,7 +140,7 @@ If you would like to test async function use the `done` callback.
 
 ```js
 bench.add("Async call test", done => {
-	asyncFunction(data).then(() => done());
+    asyncFunction(data).then(() => done());
 });
 ```
 
@@ -148,8 +148,8 @@ or
 
 ```js
 bench.add("Async call test", async done => {
-	await asyncFunction(data)
-	done();
+    await asyncFunction(data)
+    done();
 });
 ```
 
