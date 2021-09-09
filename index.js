@@ -238,6 +238,7 @@ class Suite {
 		this.parent = parent;
 		this.name = name;
 		this.description = opts.description;
+		this.meta = opts.meta || {};
 		this.logger = this.parent.logger;
 		this.onlyTest = null;
 		this.done = false;
