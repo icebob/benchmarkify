@@ -22,5 +22,6 @@ module.exports = logger => {
 		return key + " \u00d7 " + cpus[key];
 	}).join("\n");
 
-	logger.info("  ", cpus);
+	logger.info("  ", "CPU:", cpus);
+	logger.info("  ", "Memory:", (os.totalmem() / 1024 / 1024 / 1024).toFixed(0), "GB");
 };

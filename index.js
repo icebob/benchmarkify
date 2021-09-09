@@ -6,33 +6,36 @@ const ora = require("ora");
 
 /**
  * Formatting number
- * 
+ *
  * @param {any} value Number value
  * @param {number} [decimals=0] Count of decimals
  * @param {boolean} [sign=false] Put '+' sign if the number is positive
- * @returns 
+ * @returns
  */
 function formatNumber(value, decimals = 0, sign = false) {
 	let res = Number(value.toFixed(decimals)).toLocaleString();
-	if (sign && value > 0.0)
-		res = "+" + res;
+	if (sign && value > 0.0) res = "+" + res;
 	return res;
+}
+
+function delay(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
  * Test case class
- * 
+ *
  * @class TestCase
  */
 class TestCase {
 	/**
 	 * Creates an instance of TestCase.
-	 * 
-	 * @param {Suite} suite 
-	 * @param {String} name 
-	 * @param {Function} fn 
-	 * @param {Object} opts 
-	 * 
+	 *
+	 * @param {Suite} suite
+	 * @param {String} name
+	 * @param {Function} fn
+	 * @param {Object} opts
+	 *
 	 * @memberOf TestCase
 	 */
 	constructor(suite, name, fn, opts) {
@@ -51,21 +54,21 @@ class TestCase {
 		this.timer = null;
 		this.startTime = null;
 		this.startHrTime = null;
-		
+
 		this.stat = {
 			duration: null,
 			cycle: 0,
 			count: 0,
-			avg: null,			
+			avg: null,
 			rps: null
 		};
 	}
 
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf TestCase
 	 */
 	run() {
@@ -84,9 +87,9 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf TestCase
 	 */
 	start() {
@@ -97,9 +100,9 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf TestCase
 	 */
 	finish() {
@@ -118,10 +121,10 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
+	 *
+	 *
+	 * @param {any} resolve
+	 *
 	 * @memberOf TestCase
 	 */
 	cycling(resolve) {
@@ -133,7 +136,6 @@ class TestCase {
 
 			this.stat.cycle++;
 			setImmediate(() => this.cycling(resolve));
-
 		} else {
 			this.finish();
 			resolve(this);
@@ -141,10 +143,10 @@ class TestCase {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
+	 *
+	 *
+	 * @param {any} resolve
+	 *
 	 * @memberOf TestCase
 	 *
 	cyclingAsync(resolve, reject) {
@@ -177,10 +179,10 @@ class TestCase {
 	}*/
 
 	/**
-	 * 
-	 * 
-	 * @param {any} resolve 
-	 * 
+	 *
+	 *
+	 * @param {any} resolve
+	 *
 	 * @memberOf TestCase
 	 */
 	cyclingAsyncCb(resolve) {
@@ -189,12 +191,15 @@ class TestCase {
 		let c = 0;
 
 		function cycle() {
-			fn(function() {
+			fn(function () {
 				self.stat.count++;
 				c++;
 
 				if (c >= self.cycles) {
-					if (Date.now() - self.startTime < self.time || self.stat.count < self.minSamples) {
+					if (
+						Date.now() - self.startTime < self.time ||
+						self.stat.count < self.minSamples
+					) {
 						// Wait for new cycle
 						c = 0;
 						setImmediate(() => cycle());
@@ -216,46 +221,67 @@ class TestCase {
 }
 
 /**
- * 
- * 
+ *
+ *
  * @class Suite
  */
 class Suite {
 	/**
 	 * Creates an instance of Suite.
-	 * @param {Benchmarkify} parent 
-	 * @param {String} name 
-	 * @param {Object} opts 
-	 * 
+	 * @param {Benchmarkify} parent
+	 * @param {String} name
+	 * @param {Object} opts
+	 *
 	 * @memberOf Suite
 	 */
-	constructor(parent, name, opts) {
+	constructor(parent, name, opts = {}) {
 		this.parent = parent;
 		this.name = name;
+		this.description = opts.description;
 		this.logger = this.parent.logger;
 		this.onlyTest = null;
 		this.done = false;
 		this.running = false;
+		this.locals = {};
 
 		this.tests = [];
 
-		_.assign(this, {
-			time: 5000,
-			minSamples: 0
-		}, opts);
+		_.assign(
+			this,
+			{
+				time: 5000,
+				minSamples: 0
+			},
+			opts
+		);
 
-		if (!this.cycles)
-			this.cycles = this.minSamples >  0 ? this.minSamples : 1000;
+		if (!this.cycles) this.cycles = this.minSamples > 0 ? this.minSamples : 1000;
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} opts 
-	 * @returns 
-	 * 
+	 *
+	 * @param {*} fn
+	 */
+	setup(fn) {
+		this.setupFn = fn;
+	}
+
+	/**
+	 *
+	 * @param {*} fn
+	 */
+	tearDown(fn) {
+		this.tearDownFn = fn;
+	}
+
+	/**
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} opts
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	appendTest(name, fn, opts) {
@@ -265,13 +291,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	add(name, fn, opts = {}) {
@@ -280,13 +306,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	only(name, fn, opts = {}) {
@@ -295,13 +321,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	skip(name, fn, opts = {}) {
@@ -312,13 +338,13 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} name 
-	 * @param {any} fn 
-	 * @param {any} [opts={}] 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} name
+	 * @param {any} fn
+	 * @param {any} [opts={}]
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	ref(name, fn, opts = {}) {
@@ -329,44 +355,57 @@ class Suite {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	run() {
 		let self = this;
-		self.maxTitleLength = this.tests.reduce((max, test) => Math.max(max, test.name.length), 0) + 2;
+		self.maxTitleLength =
+			this.tests.reduce((max, test) => Math.max(max, test.name.length), 0) + 2;
 
 		if (this.onlyTest) {
-			this.tests.forEach(test => test.skip = test !== this.onlyTest);
+			this.tests.forEach(test => (test.skip = test !== this.onlyTest));
 		}
 
-		return new Promise(resolve => {
-			self.running = true;
-			self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
+		return Promise.resolve()
+			.then(() => {
+				if (_.isFunction(self.setupFn)) return self.setupFn.call(self);
+				else if (Array.isArray(self.setupFn))
+					return Promise.all(self.setupFn.map(fn => fn.call(self)));
+			})
+			.then(() => {
+				return new Promise(resolve => {
+					self.running = true;
+					self.logger.log(chalk.magenta.bold(`Suite: ${self.name}`));
 
-			this.runTest(Array.from(this.tests), resolve);
+					this.runTest(Array.from(this.tests), resolve);
+				});
+			})
+			.then(() => {
+				if (_.isFunction(self.tearDownFn)) return self.tearDownFn.call(self);
+				else if (Array.isArray(self.tearDownFn))
+					return Promise.all(self.tearDownFn.map(fn => fn.call(self)));
+			})
+			.then(() => {
+				if (self.parent.spinner) self.parent.spinner.stop();
 
-		}).then(() => {
-			if (self.parent.spinner)
-				self.parent.spinner.stop();
+				self.logger.log("");
 
-			self.logger.log("");
-
-			// Generate results
-			return self.calculateResult();
-		});
+				// Generate results
+				return self.calculateResult();
+			});
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} list 
-	 * @param {any} resolve 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} list
+	 * @param {any} resolve
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	runTest(list, resolve) {
@@ -374,13 +413,10 @@ class Suite {
 		const test = list.shift();
 
 		function printAndRun(type, msg, err) {
-			if (self.parent.spinner)
-				self.parent.spinner[type](msg);
-			else
-				self.logger.log("››", msg);
+			if (self.parent.spinner) self.parent.spinner[type](msg);
+			else self.logger.log("››", msg);
 
-			if (err)
-				self.logger.error(err);
+			if (err) self.logger.error(err);
 
 			return list.length > 0 ? self.runTest(list, resolve) : resolve();
 		}
@@ -397,22 +433,27 @@ class Suite {
 		}
 
 		// Run test
-		return test.run().then(() => {
-			const flag = test.async ? "*" : "";
-			let msg = _.padEnd(test.name + flag, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 20);
-			return printAndRun("succeed", msg);
-
-		}).catch(err => {
-			test.error = err;
-			return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
-		});
+		return test
+			.run()
+			.then(() => delay(200))
+			.then(() => {
+				const flag = test.async ? "*" : "";
+				let msg =
+					_.padEnd(test.name + flag, self.maxTitleLength) +
+					_.padStart(formatNumber(test.stat.rps) + " rps", 20);
+				return printAndRun("succeed", msg);
+			})
+			.catch(err => {
+				test.error = err;
+				return printAndRun("fail", chalk.red("[ERR] " + test.name), err);
+			});
 	}
-		
+
 	/**
-	 * 
-	 * 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @returns
+	 *
 	 * @memberOf Suite
 	 */
 	calculateResult() {
@@ -423,16 +464,14 @@ class Suite {
 		this.tests.forEach(test => {
 			if (test.skip) return;
 
-			if (test.reference)
-				reference = test;
+			if (test.reference) reference = test;
 
 			if (test.stat.rps > maxRps) {
 				maxRps = test.stat.rps;
 				fastest = test;
 			}
 
-			if (test.name.length > maxTitleLength)
-				maxTitleLength = test.name.length;
+			if (test.name.length > maxTitleLength) maxTitleLength = test.name.length;
 		});
 
 		//this.tests.sort((a, b) => b.stat.rps - a.stat.rps);
@@ -451,41 +490,38 @@ class Suite {
 			}
 			const baseRps = reference ? reference.stat.rps : fastest.stat.rps;
 			const c = test == fastest ? chalk.green : chalk.cyan;
-			test.stat.percent = ((test.stat.rps / baseRps) * 100) - 100;
+			test.stat.percent = (test.stat.rps / baseRps) * 100 - 100;
 			let flag = test.async ? "*" : "";
-			if (test == reference)
-				flag += " (#)";
+			if (test == reference) flag += " (#)";
 
 			let line = [
-				"  ", 
-				pe(test.name + flag, maxTitleLength + 5), 
-				ps(formatNumber(test.stat.percent, 2, true) + "%", 8), 
+				"  ",
+				pe(test.name + flag, maxTitleLength + 5),
+				ps(formatNumber(test.stat.percent, 2, true) + "%", 8),
 				ps("  (" + formatNumber(test.stat.rps) + " rps)", 20),
 				"  (avg: " + humanize.short(test.stat.avg * 1000) + ")"
 			];
 			this.logger.log(c.bold(...line));
 		});
-		this.logger.log("-----------------------------------------------------------------------\n");
+		this.logger.log(
+			"-----------------------------------------------------------------------\n"
+		);
 
 		// Generate result to return
 		const result = this.tests.map(test => {
 			let item = {
-				name: test.name
+				name: test.name,
+				meta: test.meta || {}
 			};
 
-			if (test === fastest)
-				item.fastest = true;
+			if (test === fastest) item.fastest = true;
 
-			if (test.reference)
-				item.reference = true;
+			if (test.reference) item.reference = true;
 
-			if (test.error)
-				item.error = test.error.toString();
+			if (test.error) item.error = test.error.toString();
 
-			if (!test.skip)
-				item.stat = test.stat;
-			else
-				item.skipped = true;
+			if (!test.skip) item.stat = test.stat;
+			else item.skipped = true;
 
 			return item;
 		});
@@ -495,35 +531,30 @@ class Suite {
 }
 
 /**
- * 
- * 
+ *
+ *
  * @class Benchmarkify
  */
 class Benchmarkify {
 	/**
 	 * Creates an instance of Benchmarkify.
-	 * @param {any} name 
-	 * @param {any} logger 
-	 * 
+	 * @param {any} name
+	 * @param {any} logger
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	constructor(name, opts = {}) {
 		this.name = name;
+		this.description = opts.description;
+		this.meta = opts.meta || {};
 		this.logger = opts.logger || console;
 		if (opts.spinner !== false) {
-			this.spinner = ora({ 
-				text: "Running benchmark...", 
-				spinner: { 
-					interval: 400, 
-					"frames": [
-						".  ",
-						".. ",
-						"...",
-						" ..",
-						"  .",
-						"   "
-					]
-				} 
+			this.spinner = ora({
+				text: "Running benchmark...",
+				spinner: {
+					interval: 400,
+					frames: [".  ", ".. ", "...", " ..", "  .", "   "]
+				}
 			});
 		}
 
@@ -533,21 +564,21 @@ class Benchmarkify {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	printPlatformInfo() {
 		require("./platform")(this.logger);
-		this.logger.log("");	
+		this.logger.log("");
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {boolean} [platformInfo=true] 
-	 * 
+	 *
+	 *
+	 * @param {boolean} [platformInfo=true]
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	printHeader(platformInfo = true) {
@@ -556,21 +587,20 @@ class Benchmarkify {
 		this.logger.log(chalk.yellow.bold(lines));
 		this.logger.log(chalk.yellow.bold(title));
 		this.logger.log(chalk.yellow.bold(lines));
-		this.logger.log("");	
+		this.logger.log("");
 
-		if (platformInfo)
-			this.printPlatformInfo();
+		if (platformInfo) this.printPlatformInfo();
 
 		return this;
 	}
 
 	/**
-	 * 
-	 * 
+	 *
+	 *
 	 * @param {String} name
-	 * @param {any} opts 
-	 * @returns 
-	 * 
+	 * @param {any} opts
+	 * @returns
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	createSuite(name, opts) {
@@ -580,11 +610,11 @@ class Benchmarkify {
 	}
 
 	/**
-	 * 
-	 * 
-	 * @param {any} suites 
-	 * @returns 
-	 * 
+	 *
+	 *
+	 * @param {any} suites
+	 * @returns
+	 *
 	 * @memberOf Benchmarkify
 	 */
 	run(suites) {
@@ -594,27 +624,30 @@ class Benchmarkify {
 		let start = Date.now();
 
 		/**
-		 * 
-		 * 
-		 * @param {any} suite 
-		 * @returns 
+		 *
+		 *
+		 * @param {any} suite
+		 * @returns
 		 */
 		function run(suite) {
 			return suite.run().then(res => {
 				results.push({
 					name: suite.name,
+					description: suite.description,
+					meta: suite.meta,
 					tests: res
 				});
 
-				if (list.length > 0)
-					return run(list.shift());
+				if (list.length > 0) return run(list.shift());
 
 				return {
 					name: self.name,
+					description: self.description,
+					meta: self.meta,
 					suites: results,
 					timestamp: Date.now(),
 					generated: new Date().toString(),
-					elapsedMs: Date.now() - start					
+					elapsedMs: Date.now() - start
 				};
 			});
 		}
