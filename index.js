@@ -1,9 +1,8 @@
 const _ = require("lodash");
-const Promise = require("bluebird");
 const chalk = require("chalk");
-const humanize = require('tiny-human-time');
+const humanize = require("tiny-human-time");
 
-const ora = require('ora');
+const ora = require("ora");
 
 /**
  * Formatting number
@@ -398,7 +397,7 @@ class Suite {
 		}
 
 		// Run test
-		return test.run().delay(200).then(() => {
+		return test.run().then(() => {
 			const flag = test.async ? "*" : "";
 			let msg = _.padEnd(test.name + flag, self.maxTitleLength) + _.padStart(formatNumber(test.stat.rps) + " rps", 20);
 			return printAndRun("succeed", msg);
