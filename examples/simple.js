@@ -2,7 +2,7 @@
 
 const { inspect } = require("util");
 const Benchmarkify = require("../");
-const benchmark = new Benchmarkify("Simple example", { description: "This is a common benchmark", chartImage: true }).printHeader();
+const benchmark = new Benchmarkify("Simple example", { description: "This is a common benchmark", chartImage: true, drawChart: true }).printHeader();
 
 const ITERATION = 1000;
 
@@ -21,5 +21,5 @@ benchmark.createSuite("String concatenate", { time: 1000, description: "Concaten
 	});
 
 benchmark.run().then(res => {
-	console.log(inspect(res, { depth: 5, colors: true }));
+	// console.log(inspect(res, { depth: 5, colors: true }));
 });

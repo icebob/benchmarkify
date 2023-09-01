@@ -46,5 +46,5 @@ bench2.add("Increment with = i + 1", () => {
 });
 
 benchmark.run([bench1, bench2]).then(res => {
-	console.log(JSON.stringify(res, null, 2));
+	// console.log(JSON.stringify(res, null, 2));
 });

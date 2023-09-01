@@ -22,6 +22,7 @@ class Benchmarkify {
 		this.meta = opts.meta || {};
 		this.logger = opts.logger || console;
 		this.chartImage = opts.chartImage;
+		this.drawChart = opts.drawChart != null ? opts.drawChart : true;
 		if (opts.spinner !== false) {
 			this.spinner = ora({
 				text: "Running benchmark...",

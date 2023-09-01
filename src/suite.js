@@ -3,6 +3,7 @@ const _ = require("lodash");
 const humanize = require("tiny-human-time");
 
 const { generateChartJSImageUrl } = require("./chart-image");
+const { drawChart } = require("./console-chart");
 const TestCase = require("./testcase");
 
 /**
@@ -212,10 +213,17 @@ class Suite {
 					tests: self.calculateResult()
 				};              
 
+				if (self.parent.drawChart) {
+					self.logger.log("");
+					drawChart(self.logger, result, self.parent.drawChart);
+				}
+        
 				if (self.parent.chartImage) {
 					const url = generateChartJSImageUrl(result, self.parent.chartImage);
 					self.logger.log("");
 					self.logger.log(kleur.yellow().bold("Chart: ") + url);
+
+					result.chartImage = url;
 				}
         
 				self.logger.log(

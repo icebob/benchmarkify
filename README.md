@@ -54,13 +54,19 @@ Platform info:
 Suite: String concatenate
 =========================
 
-√ Concat with '+'                105 321 ops/sec
-√ Concat with array & join        57 369 ops/sec
+√ Concat with '+'                105 533 ops/sec
+√ Concat with array & join        57 987 ops/sec
 
-   Concat with '+'                +83,58%    (105 321 ops/sec)   (avg: 9μs)
-   Concat with array & join (#)        0%     (57 369 ops/sec)   (avg: 17μs)
+   Concat with '+'                +81,99%    (105 533 ops/sec)   (avg: 9μs)
+   Concat with array & join (#)        0%     (57 987 ops/sec)   (avg: 17μs)
 
-Chart: https://image-charts.com/chart.js/2.8.0?bkg=white&c=%7B%22type%22%3A%22bar%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Concat%20with%20%27%2B%27%22%2C%22Concat%20with%20array%20%26%20join%22%5D%2C%22datasets%22%3A%5B%7B%22label%22%3A%22Dataset%201%22%2C%22backgroundColor%22%3A%22rgba%2854%2C%20162%2C%20235%2C%200.5%29%22%2C%22borderColor%22%3A%22rgb%2854%2C%20162%2C%20235%29%22%2C%22borderWidth%22%3A1%2C%22data%22%3A%5B105320.73392654078%2C57369.423976363796%5D%7D%5D%7D%2C%22options%22%3A%7B%22responsive%22%3Afalse%2C%22legend%22%3A%7B%22display%22%3Afalse%2C%22position%22%3A%22top%22%7D%2C%22title%22%3A%7B%22display%22%3Atrue%2C%22text%22%3A%22String%20concatenate%7C%28ops%2Fsec%29%22%7D%2C%22layout%22%3A%7B%22padding%22%3A20%7D%7D%7D
+┌──────────────────────────┬────────────────────────────────────────────────────┐
+│ Concat with '+'          │ ██████████████████████████████████████████████████ │
+├──────────────────────────┼────────────────────────────────────────────────────┤
+│ Concat with array & join │ ███████████████████████████                        │
+└──────────────────────────┴────────────────────────────────────────────────────┘
+
+Chart: https://image-charts.com/chart.js/2.8.0?bkg=white&c=%7B%22type%22%3A%22bar%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Concat%20with%20%27%2B%27%22%2C%22Concat%20with%20array%20%26%20join%22%5D%2C%22datasets%22%3A%5B%7B%22label%22%3A%22Dataset%201%22%2C%22backgroundColor%22%3A%22rgba%2854%2C%20162%2C%20235%2C%200.5%29%22%2C%22borderColor%22%3A%22rgb%2854%2C%20162%2C%20235%29%22%2C%22borderWidth%22%3A1%2C%22data%22%3A%5B105532.65917212216%2C57986.883366982394%5D%7D%5D%7D%2C%22options%22%3A%7B%22responsive%22%3Afalse%2C%22legend%22%3A%7B%22display%22%3Afalse%2C%22position%22%3A%22top%22%7D%2C%22title%22%3A%7B%22display%22%3Atrue%2C%22text%22%3A%22String%20concatenate%7C%28ops%2Fsec%29%22%7D%2C%22layout%22%3A%7B%22padding%22%3A20%7D%7D%7D
 -----------------------------------------------------------------------
 ```
 
@@ -140,6 +146,7 @@ const benchmark = new Benchmarkify("Benchmark #1", opts);
 * `description` - Custom description field.
 * `meta` - To store any meta information. Result JSON contains it.
 * `chartImage` - Generate chart image url and print to the console after every suite.
+* `drawChart` - Draw a bar chart to the console after every suite. Default: `true`
 
 ### Methods
 * `createSuite` - Create a new benchmark suite.
