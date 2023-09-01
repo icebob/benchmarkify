@@ -1,9 +1,9 @@
 # :zap: benchmarkify
-Benchmark framework for NodeJS for measure the execution time of JS codes.
+Benchmark framework for Node.js for measure the execution time of JS codes.
 
 # Installation
 ```
-$ npm install benchmarkify --save-dev
+$ npm i benchmarkify
 ```
 
 # Usage
@@ -15,24 +15,26 @@ const Benchmarkify = require("benchmarkify");
 // Create a new benchmark
 // The `.printHeader` method will print the name of benchmark & some
 // information from the OS/PC to the console.
-const benchmark = new Benchmarkify("Simple example").printHeader();
-
-let i = 0;
+const benchmark = new Benchmarkify("Simple example", { description: "This is a common benchmark", chartImage: true }).printHeader();
 
 // Create a test suite
-const bench1 = benchmark.createSuite("Increment integer");
+benchmark.createSuite("String concatenate", { time: 1000, description: "Concatenate string in different ways" })
 
-// Add first func
-bench1.add("Increment with ++", () => {
-    i++;
-});
+    .add("Concat with '+'", () => {
+		let s = "";
+		for (let i = 0; i < 1000; i++)
+			s += "test" + i;
+		return s;
+	})
 
-// Add second func. This result will be the reference
-bench1.ref("Increment with i + 1", () => {
-    i = i + 1;
-});
+	.ref("Concat with array & join", () => {
+		let s = [];
+		for (let i = 0; i < 1000; i++)
+			s.push("test" + i);
+		return s.join();
+	});
 
-bench1.run();
+benchmark.run();
 ```
 
 **Output**
@@ -43,55 +45,84 @@ bench1.run();
 
 Platform info:
 ==============
-   Windows_NT 6.1.7601 x64
-   Node.JS: 6.10.0
-   V8: 5.1.281.93
-   Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz × 8
+   Windows_NT 10.0.19045 x64
+   Node.JS: 18.16.0
+   V8: 10.2.154.26-node.26
+   CPU: 13th Gen Intel(R) Core(TM) i5-13500 × 20
+   Memory: 32 GB
 
-Suite: Increment integer
-√ Increment with ++           98,878,885 rps
-√ Increment with i + 1        89,930,539 rps
+Suite: String concatenate
+=========================
 
-   Increment with ++           +9.95%     (98,878,885 rps)   (avg: 10ns)
-   Increment with i + 1 (#)        0%     (89,930,539 rps)   (avg: 11ns)
+√ Concat with '+'                105 321 ops/sec
+√ Concat with array & join        57 369 ops/sec
+
+   Concat with '+'                +83,58%    (105 321 ops/sec)   (avg: 9μs)
+   Concat with array & join (#)        0%     (57 369 ops/sec)   (avg: 17μs)
+
+Chart: https://image-charts.com/chart.js/2.8.0?bkg=white&c=%7B%22type%22%3A%22bar%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Concat%20with%20%27%2B%27%22%2C%22Concat%20with%20array%20%26%20join%22%5D%2C%22datasets%22%3A%5B%7B%22label%22%3A%22Dataset%201%22%2C%22backgroundColor%22%3A%22rgba%2854%2C%20162%2C%20235%2C%200.5%29%22%2C%22borderColor%22%3A%22rgb%2854%2C%20162%2C%20235%29%22%2C%22borderWidth%22%3A1%2C%22data%22%3A%5B105320.73392654078%2C57369.423976363796%5D%7D%5D%7D%2C%22options%22%3A%7B%22responsive%22%3Afalse%2C%22legend%22%3A%7B%22display%22%3Afalse%2C%22position%22%3A%22top%22%7D%2C%22title%22%3A%7B%22display%22%3Atrue%2C%22text%22%3A%22String%20concatenate%7C%28ops%2Fsec%29%22%7D%2C%22layout%22%3A%7B%22padding%22%3A20%7D%7D%7D
 -----------------------------------------------------------------------
-
 ```
+
+**Example chart image**
+![Example chart image](https://image-charts.com/chart.js/2.8.0?bkg=white&c=%7B%22type%22%3A%22bar%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Concat%20with%20%27%2B%27%22%2C%22Concat%20with%20array%20%26%20join%22%5D%2C%22datasets%22%3A%5B%7B%22label%22%3A%22Dataset%201%22%2C%22backgroundColor%22%3A%22rgba%2854%2C%20162%2C%20235%2C%200.5%29%22%2C%22borderColor%22%3A%22rgb%2854%2C%20162%2C%20235%29%22%2C%22borderWidth%22%3A1%2C%22data%22%3A%5B105320.73392654078%2C57369.423976363796%5D%7D%5D%7D%2C%22options%22%3A%7B%22responsive%22%3Afalse%2C%22legend%22%3A%7B%22display%22%3Afalse%2C%22position%22%3A%22top%22%7D%2C%22title%22%3A%7B%22display%22%3Atrue%2C%22text%22%3A%22String%20concatenate%7C%28ops%2Fsec%29%22%7D%2C%22layout%22%3A%7B%22padding%22%3A20%7D%7D%7D)
 
 **JSON result**
 
 If you need the results in JSON use `.then` after `run()`
+
 ```js
-bench1.run().then(res => console.log(res));
+benchmark.run().then(res => console.log(res));
 ```
-Result on console:
+
+**Result on the console:**
 ```js
-[
+{
+  name: 'Simple example',
+  description: 'This is a common benchmark',
+  meta: {},
+  suites: [
     {
-        name: 'Increment with ++',
-        fastest: true,
-        stat: {
-            duration: 4.999651845,
-            cycle: 492086,
-            count: 492086000,
-            avg: 1.0160118038310376e-8,
-            rps: 98424053.36525989,
-            percent: 9.95071720945748
-        }
-    },
-    {
-        name: 'Increment with i + 1',
-        reference: true,
-        stat: {
-            duration: 4.999535403,
-            cycle: 447541,
-            count: 447541000,
-            avg: 1.117112265244972e-8,
-            rps: 89516517.82112603,
+      name: 'String concatenate',
+      description: 'Concatenate string in different ways',
+      meta: {},
+      unit: 'ops/sec',
+      tests: [
+        {
+          name: "Concat with '+'",
+          meta: {},
+          unit: 'ops/sec',
+          fastest: true,
+          stat: {
+            duration: 1.0064495,
+            cycle: 106,
+            count: 106000,
+            avg: 0.000009494806603773585,
+            rps: 105320.73392654078,
+            percent: 83.58339098878338
+          }
+        },
+        {
+          name: 'Concat with array & join',
+          meta: {},
+          unit: 'ops/sec',
+          reference: true,
+          stat: {
+            duration: 1.0109915,
+            cycle: 58,
+            count: 58000,
+            avg: 0.000017430887931034482,
+            rps: 57369.423976363796,
             percent: 0
+          }
         }
+      ]
     }
-]
+  ],
+  timestamp: 1693594301782,
+  generated: 'Fri Sep 01 2023 20:51:41 GMT+0200 (közép-európai nyári idő)',
+  elapsedMs: 2466
+}
 ```
 
 # API
@@ -108,6 +139,7 @@ const benchmark = new Benchmarkify("Benchmark #1", opts);
 * `minSamples` - Minimum samples. Default: `0` - not used
 * `description` - Custom description field.
 * `meta` - To store any meta information. Result JSON contains it.
+* `chartImage` - Generate chart image url and print to the console after every suite.
 
 ### Methods
 * `createSuite` - Create a new benchmark suite.
@@ -124,6 +156,7 @@ const bench1 = benchmark.createSuite("Date performance", { time: 1000 });
 * `time` - Time of test. Default: `5000` (5sec)
 * `minSamples` - Minimum samples. Default `0` - disabled
 * `description` - Custom description field.
+* `unit` - Measurement unit. Default: `"ops/sec"`.
 * `meta` - To store any meta information. Result JSON contains it.
 
 ### Methods
@@ -158,6 +191,6 @@ Benchmarkify is available under the [MIT license](https://tldrlegal.com/license/
 
 # Contact
 
-Copyright (C) 2021 Icebob
+Copyright (C) 2023 Icebob
 
 [![@icebob](https://img.shields.io/badge/github-icebob-green.svg)](https://github.com/icebob) [![@icebob](https://img.shields.io/badge/twitter-Icebobcsi-blue.svg)](https://twitter.com/Icebobcsi)
