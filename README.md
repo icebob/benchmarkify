@@ -1,5 +1,5 @@
 # :zap: benchmarkify
-Benchmark framework for Node.js for measure the execution time of JS codes.
+Benchmark framework for Node.js for measure the execution time of JS codes. It can generate JSON result, chart image or draw a simple bar chart to the console.
 
 # Installation
 ```
