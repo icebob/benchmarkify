@@ -1,6 +1,6 @@
 "use strict";
 
-let os = require("os");
+const os = require("os");
 
 module.exports = logger => {
 	logger.info("Platform info:");

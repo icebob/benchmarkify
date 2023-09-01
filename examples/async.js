@@ -7,7 +7,7 @@ function add(a, b) {
 }
 
 const Benchmarkify = require("../");
-const benchmark = new Benchmarkify("ES6 Promise vs BlueBird").printHeader();
+const benchmark = new Benchmarkify("ES6 Promise vs BlueBird vs await").printHeader();
 
 const bench1 = benchmark.createSuite("Without promise");
 
@@ -52,6 +52,13 @@ bench3.add("Bluebird new Promise", done => {
 	});
 });
 
-benchmark.run([bench1, bench2, bench3]).then(res => {
+const bench4 = benchmark.createSuite("Async/await");
+
+bench4.add("Async/await", async done => {
+	await add(5, 8);
+	done();
+});
+
+benchmark.run([bench1, bench2, bench3, bench4]).then(res => {
 	//console.log(JSON.stringify(res, null, 2));
 });
