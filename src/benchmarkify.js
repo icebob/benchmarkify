@@ -105,12 +105,7 @@ class Benchmarkify {
 		 */
 		function run(suite) {
 			return suite.run().then(res => {
-				results.push({
-					name: suite.name,
-					description: suite.description,
-					meta: suite.meta,
-					tests: res
-				});
+				results.push(res);
 
 				if (list.length > 0) return run(list.shift());
 

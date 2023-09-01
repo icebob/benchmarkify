@@ -2,7 +2,7 @@
 
 const { inspect } = require("util");
 const Benchmarkify = require("../");
-const benchmark = new Benchmarkify("Simple example", { description: "This is a common benchmark" }).printHeader();
+const benchmark = new Benchmarkify("Simple example", { description: "This is a common benchmark", chartImage: true }).printHeader();
 
 const ITERATION = 1000;
 

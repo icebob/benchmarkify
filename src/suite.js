@@ -2,6 +2,7 @@ const kleur = require("kleur");
 const _ = require("lodash");
 const humanize = require("tiny-human-time");
 
+const { generateChartJSImageUrl } = require("./chart-image");
 const TestCase = require("./testcase");
 
 /**
@@ -203,7 +204,25 @@ class Suite {
 				self.logger.log("");
 
 				// Generate results
-				return self.calculateResult();
+				const result ={
+					name: self.name,
+					description: self.description,
+					meta: self.meta,
+					unit: self.unit,
+					tests: self.calculateResult()
+				};              
+
+				if (self.parent.chartImage) {
+					const url = generateChartJSImageUrl(result, self.parent.chartImage);
+					self.logger.log("");
+					self.logger.log(kleur.yellow().bold("Chart: ") + url);
+				}
+        
+				self.logger.log(
+					"-----------------------------------------------------------------------\n"
+				);
+                
+				return result;
 			});
 	}
 
@@ -311,9 +330,6 @@ class Suite {
 			];
 			this.logger.log(c.bold(line.join(" ")));
 		});
-		this.logger.log(
-			"-----------------------------------------------------------------------\n"
-		);
 
 		// Generate result to return
 		const result = this.tests.map(test => {
